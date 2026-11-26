@@ -267,7 +267,77 @@ export default class AssetGenerator {
     drawCar('car_white', 65, 40, 0xDDDDDD, 0xFFFFFF, 0xAAAAAA, false, true);
 
     // =========================================================================
-    // 8. POLICE CAR (60x35)
+    // 8. BASIC CARS (60x35) — 5 color variants
+    // =========================================================================
+    const carColors = {
+      car_red: { body: 0xCC0000, light: 0xFF4444, dark: 0x880000, window: 0x223355 },
+      car_blue: { body: 0x0044CC, light: 0x4488FF, dark: 0x002288, window: 0x223355 },
+      car_green: { body: 0x228822, light: 0x44CC44, dark: 0x115511, window: 0x223355 },
+      car_yellow: { body: 0xCCAA00, light: 0xFFEE44, dark: 0x887700, window: 0x223355 },
+      car_white: { body: 0xEEEEEE, light: 0xFFFFFF, dark: 0xBBBBBB, window: 0x223355 }
+    };
+    for (const [key, c] of Object.entries(carColors)) {
+      makeTexture(key, 60, 35, (g) => {
+        // Shadow
+        g.fillStyle(0x000000, 0.25);
+        g.fillRoundedRect(3, 3, 57, 32, 5);
+
+        // Main body
+        g.fillStyle(c.body);
+        g.fillRoundedRect(0, 4, 55, 27, 5);
+
+        // Upper highlight
+        g.fillStyle(c.light);
+        g.fillRect(5, 6, 45, 10);
+
+        // Lower shadow
+        g.fillStyle(c.dark);
+        g.fillRect(5, 20, 45, 10);
+
+        // Windshield
+        g.fillStyle(c.window);
+        g.fillRoundedRect(40, 8, 12, 19, 2);
+        g.fillStyle(0x5588BB, 0.3);
+        g.fillRect(41, 10, 4, 15);
+
+        // Rear window
+        g.fillStyle(c.window);
+        g.fillRoundedRect(8, 10, 10, 15, 2);
+
+        // Wheels
+        g.fillStyle(0x111111);
+        g.fillRect(8, 0, 8, 5);
+        g.fillRect(8, 30, 8, 5);
+        g.fillRect(40, 0, 8, 5);
+        g.fillRect(40, 30, 8, 5);
+        g.fillStyle(0x444444);
+        g.fillRect(10, 1, 4, 3);
+        g.fillRect(10, 31, 4, 3);
+        g.fillRect(42, 1, 4, 3);
+        g.fillRect(42, 31, 4, 3);
+
+        // Headlights
+        g.fillStyle(0xFFFF99);
+        g.fillCircle(53, 9, 2);
+        g.fillCircle(53, 26, 2);
+
+        // Tail lights
+        g.fillStyle(0xFF0000);
+        g.fillCircle(3, 9, 2);
+        g.fillCircle(3, 26, 2);
+
+        // Front bumper
+        g.fillStyle(0xCCCCCC);
+        g.fillRect(53, 7, 3, 21);
+
+        // Door line
+        g.lineStyle(1, c.dark, 0.5);
+        g.lineBetween(28, 6, 28, 31);
+      });
+    }
+
+    // =========================================================================
+    // 9. POLICE CAR (60x35)
     // =========================================================================
     makeTexture('police', 60, 35, (g) => {
       // Shadow
