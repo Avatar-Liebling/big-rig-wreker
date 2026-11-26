@@ -189,6 +189,7 @@ export default class GameOverScene extends Phaser.Scene {
     this.createButton(width / 2 - 100, buttonsY, 'PLAY AGAIN', () => {
       this.cameras.main.fadeOut(400, 0, 0, 0);
       this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.scene.stop('GameOverScene');
         this.scene.start('GameScene');
       });
     });
@@ -196,6 +197,7 @@ export default class GameOverScene extends Phaser.Scene {
     this.createButton(width / 2 + 100, buttonsY, 'MAIN MENU', () => {
       this.cameras.main.fadeOut(400, 0, 0, 0);
       this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.scene.stop('GameOverScene');
         this.scene.start('MenuScene');
       });
     });
