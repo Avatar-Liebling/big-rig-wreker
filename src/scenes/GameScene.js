@@ -262,51 +262,60 @@ export default class GameScene extends Phaser.Scene {
     const speedMask = this.add.graphics().fillRect(W - 176, 23, 160, 6);
     this.speedFill.setMask(speedMask.createGeometryMask());
     
-    // Bottom HUD bar
+    // Bottom HUD bar - unified height and vertical alignment
+    const barH = 50;
+    const hudY = H - barH / 2; // y = 425: exact vertical center for all bottom HUD elements
     const botBg = this.add.graphics();
     botBg.fillGradientStyle(0x141820, 0x141820, 0x0a1018, 0x0a1018, 1);
-    botBg.fillRect(0, H - 52, W, 52);
+    botBg.fillRect(0, H - barH, W, barH);
     hud(botBg);
+
     const botAccent = this.add.graphics();
     botAccent.lineStyle(2, 0xffcc00, 0.6);
-    botAccent.lineBetween(0, H - 52, W, H - 52);
+    botAccent.lineBetween(0, H - barH, W, H - barH);
     hud(botAccent);
     
-    // Health (left)
-    hud(this.add.image(22, H - 26, 'heart').setDisplaySize(20, 20));
-    this.hpBar = hud(this.add.rectangle(46, H - 26, 180, 10, 0x1a0a0a).setOrigin(0, 0.5));
+    // 1. Health meter (left) - aligned vertically to hudY
+    hud(this.add.image(22, hudY, 'heart').setDisplaySize(18, 18));
+    this.hpBarW = 120;
+    this.hpBar = hud(this.add.rectangle(42, hudY, this.hpBarW, 12, 0x1a0a0a).setOrigin(0, 0.5));
     this.hpBar.setStrokeStyle(1, 0x442222);
-    this.hpFill = hud(this.add.rectangle(46, H - 26, 180, 10, 0xff3333).setOrigin(0, 0.5));
-    const hpMask = this.add.graphics().fillRect(46, H - 31, 180, 10);
-    this.hpFill.setMask(hpMask.createGeometryMask());
-    this.hpText = hud(this.add.text(236, H - 32, '100', { 
-      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '16px', color: '#fff',
+    this.hpFill = hud(this.add.rectangle(42, hudY, this.hpBarW, 12, 0xff3333).setOrigin(0, 0.5));
+    this.hpText = hud(this.add.text(42 + this.hpBarW + 8, hudY, '100', { 
+      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '15px', color: '#ffffff',
       stroke: '#000000', strokeThickness: 2,
-    }));
+    }).setOrigin(0, 0.5));
     
-    // Nitro (center-left)
-    hud(this.add.image(W / 2 - 140, H - 26, 'nitro').setDisplaySize(20, 20));
-    this.nitroBar = hud(this.add.rectangle(W / 2 - 114, H - 26, 140, 8, 0x1a1400).setOrigin(0, 0.5));
+    // 2. Nitro meter (center-left) - aligned vertically to hudY
+    hud(this.add.image(216, hudY, 'nitro').setDisplaySize(18, 18));
+    this.nitroBarW = 110;
+    this.nitroBar = hud(this.add.rectangle(234, hudY, this.nitroBarW, 12, 0x1a1400).setOrigin(0, 0.5));
     this.nitroBar.setStrokeStyle(1, 0x443300);
-    this.nitroFill = hud(this.add.rectangle(W / 2 - 114, H - 26, 140, 8, 0xff8800).setOrigin(0, 0.5));
-    const nitroMask = this.add.graphics().fillRect(W / 2 - 114, H - 30, 140, 8);
-    this.nitroFill.setMask(nitroMask.createGeometryMask());
+    this.nitroFill = hud(this.add.rectangle(234, hudY, this.nitroBarW, 12, 0xff8800).setOrigin(0, 0.5));
+    this.nitroText = hud(this.add.text(234 + this.nitroBarW + 8, hudY, 'NITRO', {
+      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '13px', color: '#ffaa44',
+      stroke: '#000000', strokeThickness: 2,
+    }).setOrigin(0, 0.5));
     
-    // Daily challenge (right side, above bottom HUD bar) - no overlap with nitro
-    this.dailyContainer = hud(this.add.container(W - 150, H - 60).setDepth(50));
-    this.dailyBg = this.add.rectangle(0, 0, 280, 28, 0x0a1424, 0.8);
+    // 3. Daily challenge box (center-right) - completely within bottom HUD border
+    this.dailyContainer = hud(this.add.container(510, hudY).setDepth(50));
+    this.dailyBg = this.add.rectangle(0, 0, 210, 30, 0x0a1424, 0.85);
     this.dailyBg.setStrokeStyle(1, 0x336699);
     this.dailyText = this.add.text(0, 0, '', {
       fontFamily: 'Arial, sans-serif', fontSize: '10px', color: '#88ccff',
-      wordWrap: { width: 270 },
+      wordWrap: { width: 200 },
       align: 'center',
     }).setOrigin(0.5);
     this.dailyContainer.add([this.dailyBg, this.dailyText]);
     
-    // Distance (right)
-    this.distText = hud(this.add.text(W - 16, H - 32, '0m', {
-      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '14px', color: '#88aaaa',
-    }).setOrigin(1, 0));
+    // 4. Distance (far right) - aligned vertically to hudY
+    this.distLabel = hud(this.add.text(784, hudY - 10, 'DISTANCE', {
+      fontFamily: 'Arial, sans-serif', fontSize: '9px', fontWeight: 'bold', color: '#88aaaa',
+      letterSpacing: 1,
+    }).setOrigin(1, 0.5));
+    this.distText = hud(this.add.text(784, hudY + 7, '0m', {
+      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '16px', color: '#ffcc00',
+    }).setOrigin(1, 0.5));
 
     this.banner = hud(this.add.text(W / 2, H / 2, '', {
       fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '72px', color: '#ffffff',
@@ -1128,9 +1137,7 @@ export default class GameScene extends Phaser.Scene {
     this.speedFill.setMask(speedMask.createGeometryMask());
     
     const hp = Math.max(0, this.health) / 100;
-    this.hpFill.width = 180 * hp;
-    const hpMask = this.add.graphics().fillRect(46, H - 31, 180 * hp, 10);
-    this.hpFill.setMask(hpMask.createGeometryMask());
+    this.hpFill.width = (this.hpBarW || 120) * hp;
     this.hpFill.fillColor = hp > 0.4 ? 0xff3333 : (hp > 0.2 ? 0xffaa00 : 0xff2200);
     this.hpText.setText(Math.max(0, Math.ceil(this.health)).toString());
     
@@ -1145,13 +1152,19 @@ export default class GameScene extends Phaser.Scene {
     }
     
     const nitroRatio = Phaser.Math.Clamp(this.nitroCharge, 0, 1);
-    this.nitroFill.width = 140 * nitroRatio;
-    const nitroMask = this.add.graphics().fillRect(W / 2 - 114, H - 30, 140 * nitroRatio, 8);
-    this.nitroFill.setMask(nitroMask.createGeometryMask());
+    this.nitroFill.width = (this.nitroBarW || 110) * nitroRatio;
     if (nitroRatio >= 1) {
       this.nitroFill.fillColor = 0xffff00;
+      if (this.nitroText) {
+        this.nitroText.setText('READY!');
+        this.nitroText.setColor('#ffff44');
+      }
     } else {
       this.nitroFill.fillColor = 0xff8800;
+      if (this.nitroText) {
+        this.nitroText.setText('NITRO');
+        this.nitroText.setColor('#ffaa44');
+      }
     }
     
     this.levelText.setText('LEVEL ' + this.level);
