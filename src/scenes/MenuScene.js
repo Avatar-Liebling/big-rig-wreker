@@ -259,8 +259,8 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
     this.overlay.add(title);
 
-    // Volume label - positioned further left
-    const volLabel = this.add.text(width / 2 - 190, height / 2 - 40, 'VOLUME', {
+    // Volume label - centered on left side of panel
+    const volLabel = this.add.text(width / 2 - 180, height / 2 - 40, 'VOLUME', {
       fontFamily: 'Impact, Arial Black, sans-serif',
       fontSize: '14px',
       color: '#ffcc00',
@@ -268,8 +268,8 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0, 0.5);
     this.overlay.add(volLabel);
 
-    // Volume slider track - starts after VOLUME label
-    const sliderX = width / 2 - 40;
+    // Volume slider track - centered in panel
+    const sliderX = width / 2 - 100;
     const sliderY = height / 2 - 40;
     const sliderW = 200;
     const track = this.add.rectangle(sliderX + sliderW / 2, sliderY, sliderW, 12, 0x2a2a3a);
@@ -298,8 +298,8 @@ export default class MenuScene extends Phaser.Scene {
     const handleGlow = this.add.circle(sliderX + sliderW * currentVol, sliderY, 22, 0xff5500, 0.3);
     this.overlay.add(handleGlow);
 
-    // Percentage text - right-aligned, well clear of slider
-    const volText = this.add.text(sliderX + sliderW + 60, sliderY, Math.round(currentVol * 100) + '%', {
+    // Percentage text - right of slider, within panel
+    const volText = this.add.text(sliderX + sliderW + 20, sliderY, Math.round(currentVol * 100) + '%', {
       fontFamily: 'Impact, Arial Black, sans-serif',
       fontSize: '18px',
       color: '#ffcc00',
