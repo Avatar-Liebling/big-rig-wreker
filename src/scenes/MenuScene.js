@@ -268,8 +268,8 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0, 0.5);
     this.overlay.add(volLabel);
 
-    // Volume slider track - fits within panel
-    const sliderX = width / 2 - 140;
+    // Volume slider track - fits within panel, after VOLUME label
+    const sliderX = width / 2 - 80;
     const sliderY = height / 2 - 40;
     const sliderW = 200;
     const track = this.add.rectangle(sliderX + sliderW / 2, sliderY, sliderW, 12, 0x2a2a3a);
