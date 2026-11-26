@@ -268,16 +268,16 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0, 0.5);
     this.overlay.add(volLabel);
 
-    // Volume slider track - wider, with rounded ends
-    const sliderX = width / 2 - 10;
+    // Volume slider track - fits within panel
+    const sliderX = width / 2 - 140;
     const sliderY = height / 2 - 40;
-    const sliderW = 240;
+    const sliderW = 200;
     const track = this.add.rectangle(sliderX + sliderW / 2, sliderY, sliderW, 12, 0x2a2a3a);
     track.setStrokeStyle(2, 0x444466);
     this.overlay.add(track);
     // Track background segments for visual feedback
     for (let i = 0; i < 10; i++) {
-      const seg = this.add.rectangle(sliderX + i * 24 + 12, sliderY, 18, 6, 0x1a1a2a);
+      const seg = this.add.rectangle(sliderX + i * 20 + 10, sliderY, 16, 6, 0x1a1a2a);
       seg.setStrokeStyle(1, 0x333355);
       this.overlay.add(seg);
     }
