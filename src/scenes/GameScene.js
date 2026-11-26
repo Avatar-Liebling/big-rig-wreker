@@ -1087,7 +1087,11 @@ export default class GameScene extends Phaser.Scene {
     const dy = this.speed * dt;
     for (let i = this.entities.length - 1; i >= 0; i--) {
       const e = this.entities[i];
-      if (!e.active) {
+      if (!e || !e.active || e.wrecked || !e.scene || e.destroyed) {
+        // Clean up wrecked/destroyed entities immediately
+        if (e && e.scene && !e.destroyed) {
+          try { e.destroy(); } catch (_) {}
+        }
         this.entities.splice(i, 1);
         continue;
       }
@@ -1134,18 +1138,36 @@ export default class GameScene extends Phaser.Scene {
 
       // AABB collision detection - full vehicle/trailer bounds
       if (!e.wrecked && this.checkCollision(e)) {
-        if (e.kind === 'boss') {
-          if (this.speed > 350 || this.nitroActive > 0) {
-            this.damageBoss(25);
-            this.floatText(e.x, e.y - 30, '-25', '#ff4444');
-            this.burst(e.x, e.y, 'spark_particle', 12);
-            this.cameras.main.shake(100, 0.008);
-          } else if (this.shieldTime <= 0) {
-            this.damage(25);
+        try {
+          if (e.kind === 'boss') {
+            if (this.speed > 350 || this.nitroActive > 0) {
+              this.damageBoss(25);
+              this.floatText(e.x, e.y - 30, '-25', '#ff4444');
+              this.burst(e.x, e.y, 'spark_particle', 12);
+              this.cameras.main.shake(100, 0.008);
+            } else if (this.shieldTime <= 0) {
+              this.damage(25);
+            }
+            this.boss.x += Phaser.Math.Between(-40, 40);
+          } else {
+            this.resolveHit(e);
+            // Skip further processing for this entity this frame (oil, soft, etc. destroy themselves)
+            if (e.wrecked || !e.active || !e.scene || e.destroyed) {
+              if (e.scene && !e.destroyed) {
+                try { e.destroy(); } catch (_) {}
+              }
+              this.entities.splice(i, 1);
+              continue;
+            }
           }
-          this.boss.x += Phaser.Math.Between(-40, 40);
-        } else {
-          this.resolveHit(e);
+        } catch (err) {
+          console.error('Collision error:', err);
+          // Force cleanup on error
+          if (e && e.scene && !e.destroyed) {
+            try { e.destroy(); } catch (_) {}
+          }
+          this.entities.splice(i, 1);
+          continue;
         }
       }
       if (e.y > H + 80) {
