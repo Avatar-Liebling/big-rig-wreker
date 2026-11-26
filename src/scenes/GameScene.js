@@ -526,7 +526,9 @@ export default class GameScene extends Phaser.Scene {
   }
 
   updateBoss(dt) {
-    if (!this.boss || !this.boss.active) return;
+    if (!this.boss || !this.boss.active || !this.bossActive) return;
+    // Safety: if boss was removed from entities, stop processing
+    if (!this.entities.includes(this.boss)) return;
     
     // Movement pattern
     this.boss.attackTimer += dt;
@@ -644,8 +646,8 @@ export default class GameScene extends Phaser.Scene {
     this.bossBarFill.fillColor = ratio > 0.5 ? 0xff2200 : (ratio > 0.2 ? 0xffaa00 : 0xff0000);
     
     // Check collision with player - player can damage boss by ramming at high speed
-    const dist = Phaser.Math.Distance.Between(this.boss.x, this.boss.y, this.player.x, this.player.y);
-    if (dist < 60) {
+    // Use AABB collision for accuracy
+    if (this.boss && this.boss.active && this.checkCollision(this.boss)) {
       if (this.speed > 350 || this.nitroActive > 0) {
         // Player rams boss at high speed - damage boss
         this.damageBoss(25);
@@ -678,7 +680,12 @@ export default class GameScene extends Phaser.Scene {
   }
   
   cleanupBoss() {
-    if (this.boss) this.boss.destroy();
+    if (this.boss) {
+      // Remove from entities array
+      const idx = this.entities.indexOf(this.boss);
+      if (idx >= 0) this.entities.splice(idx, 1);
+      this.boss.destroy();
+    }
     if (this.bossBarBg) this.bossBarBg.destroy();
     if (this.bossBarFill) this.bossBarFill.destroy();
     if (this.bossBarLabel) this.bossBarLabel.destroy();
@@ -708,12 +715,18 @@ export default class GameScene extends Phaser.Scene {
     this.burst(this.boss.x, this.boss.y, 'explosion_particle', 30);
     this.burst(this.boss.x, this.boss.y, 'spark_particle', 20);
     
+    // Remove from entities array
+    const idx = this.entities.indexOf(this.boss);
+    if (idx >= 0) this.entities.splice(idx, 1);
+    
     this.boss.destroy();
     if (this.bossBarBg) this.bossBarBg.destroy();
     if (this.bossBarFill) this.bossBarFill.destroy();
     if (this.bossBarLabel) this.bossBarLabel.destroy();
+    if (this.bossAttackText) this.bossAttackText.destroy();
     this.boss = null;
     this.bossActive = false;
+    this.bossChaseMode = false;
     this.combo = 1;
   }
 
@@ -1085,14 +1098,17 @@ export default class GameScene extends Phaser.Scene {
 
   updateEntities(dt) {
     const dy = this.speed * dt;
-    for (let i = this.entities.length - 1; i >= 0; i--) {
+    // Use while loop for safer array modification during iteration
+    let i = this.entities.length - 1;
+    while (i >= 0) {
       const e = this.entities[i];
-      if (!e || !e.active || e.wrecked || !e.scene || e.destroyed) {
-        // Clean up wrecked/destroyed entities immediately
+      // Comprehensive cleanup check - catches wrecked, destroyed, collected, inactive, scene-less
+      if (!e || !e.active || e.wrecked || e.collected || !e.scene || e.destroyed) {
         if (e && e.scene && !e.destroyed) {
           try { e.destroy(); } catch (_) {}
         }
         this.entities.splice(i, 1);
+        i--;
         continue;
       }
       if (e.kind === 'police' && !e.wrecked) {
@@ -1110,8 +1126,11 @@ export default class GameScene extends Phaser.Scene {
       
       // AI vehicle separation - prevent overlapping for ALL vehicles
       if (!e.wrecked && (e.kind === 'car' || e.kind === 'police' || e.kind === 'boss' || e.kind === 'hard' || e.kind === 'container' || e.kind === 'debris')) {
-        for (const other of this.entities) {
-          if (other !== e && !other.wrecked && (other.kind === 'car' || other.kind === 'police' || other.kind === 'boss' || other.kind === 'hard' || other.kind === 'container' || other.kind === 'debris')) {
+        // Use index loop to avoid issues with array modification during iteration
+        for (let j = 0; j < this.entities.length; j++) {
+          const other = this.entities[j];
+          if (other !== e && other && other.active && !other.wrecked && !other.collected && other.scene && !other.destroyed &&
+              (other.kind === 'car' || other.kind === 'police' || other.kind === 'boss' || other.kind === 'hard' || other.kind === 'container' || other.kind === 'debris')) {
             const dist = Phaser.Math.Distance.Between(e.x, e.y, other.x, other.y);
             const minDist = 60; // minimum separation distance (increased)
             if (dist < minDist && dist > 0) {
@@ -1189,15 +1208,19 @@ export default class GameScene extends Phaser.Scene {
 
   // AABB collision detection for player + trailer vs entities
   checkCollision(entity) {
+    // Safety check - entity must be valid
+    if (!entity || !entity.active || !entity.scene || entity.destroyed) return false;
+    
     // Player bounds (centered on player)
-    const pW = this.playerBounds.width;
-    const pH = this.playerBounds.height;
+    const pW = this.playerBounds?.width || 70;
+    const pH = this.playerBounds?.height || 34;
     const pLeft = this.player.x - pW / 2;
     const pRight = this.player.x + pW / 2;
     const pTop = this.player.y - pH / 2;
     const pBottom = this.player.y + pH / 2;
 
-    // Trailer bounds (centered on trailer)
+    // Trailer bounds (centered on trailer) - check trailer exists
+    if (!this.trailer || !this.trailer.active || !this.trailerBounds) return false;
     const tW = this.trailerBounds.width;
     const tH = this.trailerBounds.height;
     const tLeft = this.trailer.x - tW / 2;
@@ -1205,9 +1228,9 @@ export default class GameScene extends Phaser.Scene {
     const tTop = this.trailer.y - tH / 2;
     const tBottom = this.trailer.y + tH / 2;
 
-    // Entity bounds - use display size for accuracy
-    const eW = entity.displayWidth * 0.8;
-    const eH = entity.displayHeight * 0.8;
+    // Entity bounds - use display size for accuracy (with fallbacks)
+    const eW = (entity.displayWidth || 30) * 0.8;
+    const eH = (entity.displayHeight || 30) * 0.8;
     const eLeft = entity.x - eW / 2;
     const eRight = entity.x + eW / 2;
     const eTop = entity.y - eH / 2;
@@ -1353,6 +1376,10 @@ export default class GameScene extends Phaser.Scene {
   collect(e) {
     if (!e || e.collected) return;
     e.collected = true;
+    // Destroy the powerup entity immediately to prevent freeze
+    if (e.scene && !e.destroyed) {
+      try { e.destroy(); } catch (_) {}
+    }
     const power = e.power;
     const x = e.x || (this.player ? this.player.x : W / 2);
     const y = e.y || (this.player ? this.player.y : H / 2);
