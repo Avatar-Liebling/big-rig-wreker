@@ -369,17 +369,18 @@ export default class AssetGenerator {
         g.fillRect(w - 21, 1, wheelW - 2, wheelH - 2);
         g.fillRect(w - 21, h - wheelH + 1, wheelW - 2, wheelH - 2);
         // Rims - circular
-        const rimR = Math.floor(Math.min(wheelW, wheelH) / 2) - 1;
+        const rimR = Math.max(2, Math.floor(Math.min(wheelW, wheelH) / 2) - 1);
         g.fillStyle(0x555555);
         g.fillCircle(8 + wheelW/2, wheelH/2, rimR);
         g.fillCircle(8 + wheelW/2, h - wheelH/2, rimR);
         g.fillCircle(w - 22 + wheelW/2, wheelH/2, rimR);
         g.fillCircle(w - 22 + wheelW/2, h - wheelH/2, rimR);
         g.fillStyle(0x777777);
-        g.fillCircle(8 + wheelW/2, wheelH/2, rimR - 2);
-        g.fillCircle(8 + wheelW/2, h - wheelH/2, rimR - 2);
-        g.fillCircle(w - 22 + wheelW/2, wheelH/2, rimR - 2);
-        g.fillCircle(w - 22 + wheelW/2, h - wheelH/2, rimR - 2);
+        const innerR = Math.max(1, rimR - 2);
+        g.fillCircle(8 + wheelW/2, wheelH/2, innerR);
+        g.fillCircle(8 + wheelW/2, h - wheelH/2, innerR);
+        g.fillCircle(w - 22 + wheelW/2, wheelH/2, innerR);
+        g.fillCircle(w - 22 + wheelW/2, h - wheelH/2, innerR);
         // Center caps
         g.fillStyle(0x999999);
         g.fillCircle(8 + wheelW/2, wheelH/2, 1);
