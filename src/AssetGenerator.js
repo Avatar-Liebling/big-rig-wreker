@@ -443,172 +443,111 @@ export default class AssetGenerator {
       });
     };
 
-    // 3. car_red
+    // 3. car_red (Sports sedan)
     drawCar('car_red', 60, 35, 0xCC2222, 0xFF4444, 0x881111, false, false);
-    // 4. car_blue
+    // 4. car_blue (Sedan)
     drawCar('car_blue', 60, 35, 0x2244AA, 0x4466CC, 0x112266, false, false);
-    // 5. car_green
+    // 5. car_green (Compact)
     drawCar('car_green', 60, 35, 0x228822, 0x44BB44, 0x115511, false, false);
-    // 6. car_yellow (sporty)
+    // 6. car_yellow (Sports coupe)
     drawCar('car_yellow', 55, 30, 0xDDCC00, 0xFFEE44, 0xAA9900, true, false);
-    // 7. car_white (boxy SUV)
+    // 7. car_white (SUV / Crossover)
     drawCar('car_white', 65, 40, 0xDDDDDD, 0xFFFFFF, 0xAAAAAA, false, true);
 
     // =========================================================================
-    // 8. BASIC CARS (60x35) — 5 color variants
-    // =========================================================================
-    const carColors = {
-      car_red: { body: 0xCC0000, light: 0xFF4444, dark: 0x880000, window: 0x223355 },
-      car_blue: { body: 0x0044CC, light: 0x4488FF, dark: 0x002288, window: 0x223355 },
-      car_green: { body: 0x228822, light: 0x44CC44, dark: 0x115511, window: 0x223355 },
-      car_yellow: { body: 0xCCAA00, light: 0xFFEE44, dark: 0x887700, window: 0x223355 },
-      car_white: { body: 0xEEEEEE, light: 0xFFFFFF, dark: 0xBBBBBB, window: 0x223355 }
-    };
-    for (const [key, c] of Object.entries(carColors)) {
-      makeTexture(key, 60, 35, (g) => {
-        // Shadow
-        g.fillStyle(0x000000, 0.25);
-        g.fillRoundedRect(3, 3, 57, 32, 5);
-
-        // Main body
-        g.fillStyle(c.body);
-        g.fillRoundedRect(0, 4, 55, 27, 5);
-
-        // Upper highlight
-        g.fillStyle(c.light);
-        g.fillRect(5, 6, 45, 10);
-
-        // Lower shadow
-        g.fillStyle(c.dark);
-        g.fillRect(5, 20, 45, 10);
-
-        // Windshield
-        g.fillStyle(c.window);
-        g.fillRoundedRect(40, 8, 12, 19, 2);
-        g.fillStyle(0x5588BB, 0.3);
-        g.fillRect(41, 10, 4, 15);
-
-        // Rear window
-        g.fillStyle(c.window);
-        g.fillRoundedRect(8, 10, 10, 15, 2);
-
-        // Wheels
-        g.fillStyle(0x111111);
-        g.fillRect(8, 0, 8, 5);
-        g.fillRect(8, 30, 8, 5);
-        g.fillRect(40, 0, 8, 5);
-        g.fillRect(40, 30, 8, 5);
-        g.fillStyle(0x444444);
-        g.fillRect(10, 1, 4, 3);
-        g.fillRect(10, 31, 4, 3);
-        g.fillRect(42, 1, 4, 3);
-        g.fillRect(42, 31, 4, 3);
-
-        // Headlights
-        g.fillStyle(0xFFFF99);
-        g.fillCircle(53, 9, 2);
-        g.fillCircle(53, 26, 2);
-
-        // Tail lights
-        g.fillStyle(0xFF0000);
-        g.fillCircle(3, 9, 2);
-        g.fillCircle(3, 26, 2);
-
-        // Front bumper
-        g.fillStyle(0xCCCCCC);
-        g.fillRect(53, 7, 3, 21);
-
-        // Door line
-        g.lineStyle(1, c.dark, 0.5);
-        g.lineBetween(28, 6, 28, 31);
-      });
-    }
-
-    // =========================================================================
-    // 9. POLICE CAR (60x35)
+    // 9. POLICE CAR (60x35) — Highway Interceptor
     // =========================================================================
     makeTexture('police', 60, 35, (g) => {
       // Shadow
       g.fillStyle(0x000000, 0.25);
       g.fillRoundedRect(3, 3, 57, 32, 5);
 
-      // Main body — black bottom
-      g.fillStyle(0x111111);
+      // Main body — gloss black front and rear
+      g.fillStyle(0x111318);
       g.fillRoundedRect(0, 4, 55, 27, 5);
 
-      // White upper section
-      g.fillStyle(0xEEEEEE);
-      g.fillRect(5, 6, 45, 12);
+      // White doors and roof center section (classic interceptor livery)
+      g.fillStyle(0xf0f2f5);
+      g.fillRect(16, 5, 24, 25);
 
-      // Black lower section (already the base)
+      // Black roof panel
+      g.fillStyle(0x1a1e28);
+      g.fillRect(20, 9, 16, 17);
 
-      // Door stripe — white
-      g.fillStyle(0xFFFFFF);
-      g.fillRect(15, 20, 25, 4);
-
-      // Windshield
-      g.fillStyle(0x223355);
-      g.fillRoundedRect(40, 8, 12, 19, 2);
-      g.fillStyle(0x5588BB, 0.3);
-      g.fillRect(41, 10, 4, 15);
+      // Windshield (tinted dark with specular glare)
+      g.fillStyle(0x142038);
+      g.fillRoundedRect(38, 7, 12, 21, 2);
+      g.fillStyle(0x4488cc, 0.4);
+      g.fillRect(40, 9, 4, 17);
+      g.lineStyle(1.5, 0x111111, 1);
+      g.strokeRoundedRect(38, 7, 12, 21, 2);
 
       // Rear window
-      g.fillStyle(0x223355);
-      g.fillRoundedRect(8, 10, 10, 15, 2);
+      g.fillStyle(0x142038);
+      g.fillRoundedRect(8, 9, 10, 17, 2);
+      g.fillStyle(0x4488cc, 0.25);
+      g.fillRect(9, 10, 3, 15);
+      g.strokeRoundedRect(8, 9, 10, 17, 2);
 
-      // Light bar on top
-      g.fillStyle(0x333333);
-      g.fillRect(25, 11, 16, 13);
-      // Red light
-      g.fillStyle(0xFF0000);
-      g.fillCircle(29, 14, 3);
-      g.fillStyle(0xFF4444, 0.6);
-      g.fillCircle(29, 14, 1.5);
-      // Blue light
-      g.fillStyle(0x0044FF);
-      g.fillCircle(37, 14, 3);
-      g.fillStyle(0x4488FF, 0.6);
-      g.fillCircle(37, 14, 1.5);
-      // Red light bottom
-      g.fillStyle(0xFF0000);
-      g.fillCircle(29, 21, 3);
-      g.fillStyle(0xFF4444, 0.6);
-      g.fillCircle(29, 21, 1.5);
-      // Blue light bottom
-      g.fillStyle(0x0044FF);
-      g.fillCircle(37, 21, 3);
-      g.fillStyle(0x4488FF, 0.6);
-      g.fillCircle(37, 21, 1.5);
+      // Front push-bumper / bullbar (heavy-duty interceptor)
+      g.fillStyle(0x222630);
+      g.fillRect(54, 7, 5, 21);
+      g.fillStyle(0x444b5c);
+      g.fillRect(55, 11, 3, 4);
+      g.fillRect(55, 20, 3, 4);
 
-      // Wheels
+      // High-intensity low-profile LED lightbar
       g.fillStyle(0x111111);
-      g.fillRect(8, 0, 8, 5);
-      g.fillRect(8, 30, 8, 5);
-      g.fillRect(40, 0, 8, 5);
-      g.fillRect(40, 30, 8, 5);
-      g.fillStyle(0x444444);
-      g.fillRect(10, 1, 4, 3);
-      g.fillRect(10, 31, 4, 3);
-      g.fillRect(42, 1, 4, 3);
-      g.fillRect(42, 31, 4, 3);
+      g.fillRect(25, 10, 8, 15);
+      // Red emergency strobe
+      g.fillStyle(0xff1111);
+      g.fillCircle(27, 13, 3);
+      g.fillStyle(0xffffff);
+      g.fillCircle(27, 13, 1);
+      // Strobe glow red
+      g.fillStyle(0xff2222, 0.4);
+      g.fillCircle(27, 13, 6);
+      // Blue emergency strobe
+      g.fillStyle(0x1155ff);
+      g.fillCircle(27, 22, 3);
+      g.fillStyle(0xffffff);
+      g.fillCircle(27, 22, 1);
+      // Strobe glow blue
+      g.fillStyle(0x2277ff, 0.4);
+      g.fillCircle(27, 22, 6);
 
-      // Headlights
-      g.fillStyle(0xFFFF99);
-      g.fillCircle(53, 9, 2);
-      g.fillCircle(53, 26, 2);
+      // Police star emblem / decal on door
+      g.fillStyle(0xffcc00);
+      g.fillCircle(24, 6, 2);
+      g.fillCircle(24, 29, 2);
+
+      // Wheels — black steelies with chrome center caps
+      g.fillStyle(0x0a0a0a);
+      g.fillRect(8, 0, 9, 5);
+      g.fillRect(8, 30, 9, 5);
+      g.fillRect(38, 0, 9, 5);
+      g.fillRect(38, 30, 9, 5);
+      g.fillStyle(0xcccccc);
+      g.fillCircle(12, 2.5, 2);
+      g.fillCircle(12, 32.5, 2);
+      g.fillCircle(42, 2.5, 2);
+      g.fillCircle(42, 32.5, 2);
+
+      // Headlights — crisp bright xenons
+      g.fillStyle(0xffffff);
+      g.fillCircle(53, 9, 2.5);
+      g.fillCircle(53, 26, 2.5);
+      g.fillStyle(0xffffaa);
+      g.fillCircle(52, 9, 1);
+      g.fillCircle(52, 26, 1);
 
       // Tail lights
-      g.fillStyle(0xFF0000);
-      g.fillCircle(3, 9, 2);
-      g.fillCircle(3, 26, 2);
-
-      // Front bumper
-      g.fillStyle(0xCCCCCC);
-      g.fillRect(53, 7, 3, 21);
-
-      // "POLICE" text area — simplified
-      g.fillStyle(0xFFFFFF);
-      g.fillRect(20, 25, 15, 3);
+      g.fillStyle(0xff0000);
+      g.fillCircle(3, 9, 2.5);
+      g.fillCircle(3, 26, 2.5);
+      g.fillStyle(0xff6666);
+      g.fillCircle(3, 9, 1);
+      g.fillCircle(3, 26, 1);
     });
 
     // =========================================================================
@@ -1792,94 +1731,112 @@ export default class AssetGenerator {
     });
 
     // =========================================================================
-    // 35. BOSS TRUCK (140x70) — Armored boss vehicle
+    // 35. BOSS TRUCK (140x70) — Armored Juggernaut
     // =========================================================================
     makeTexture('boss_truck', 140, 70, (g, w, h) => {
-      // Shadow
-      g.fillStyle(0x000000, 0.35);
+      // Menacing shadow
+      g.fillStyle(0x000000, 0.4);
       g.fillRoundedRect(5, 5, w - 5, h - 5, 8);
 
-      // Main body — dark steel
-      g.fillStyle(0x2a2a3a);
-      g.fillRoundedRect(0, 6, w - 8, h - 12, 8);
+      // Heavy armored dark steel chassis
+      g.fillStyle(0x1a1c24);
+      g.fillRoundedRect(0, 5, w - 8, h - 10, 6);
 
-      // Armor plates
-      g.fillStyle(0x3a3a4a);
-      g.fillRoundedRect(8, 14, w - 24, h - 28, 4);
-      // Plate lines
-      g.lineStyle(2, 0x4a4a5a, 0.8);
-      for (let x = 20; x < w - 20; x += 18) {
-        g.lineBetween(x, 16, x, h - 16);
+      // Gunmetal reinforced side armor plates
+      g.fillStyle(0x2d323e);
+      g.fillRoundedRect(6, 12, w - 24, h - 24, 4);
+
+      // Armor plating welds and rivets
+      g.lineStyle(2, 0x474f62, 0.9);
+      for (let x = 18; x < w - 20; x += 16) {
+        g.lineBetween(x, 14, x, h - 14);
+        g.fillStyle(0x76829d);
+        g.fillCircle(x, 15, 1.5);
+        g.fillCircle(x, h - 15, 1.5);
       }
 
-      // Red warning lights on top
-      g.fillStyle(0x880000);
-      g.fillCircle(30, 16, 5);
-      g.fillCircle(w - 30, 16, 5);
-      g.fillCircle(30, h - 16, 5);
-      g.fillCircle(w - 30, h - 16, 5);
-      g.fillStyle(0xff2222);
-      g.fillCircle(30, 16, 2.5);
-      g.fillCircle(w - 30, 16, 2.5);
-      g.fillCircle(30, h - 16, 2.5);
-      g.fillCircle(w - 30, h - 16, 2.5);
+      // Spiked heavy front battering ram (Plow)
+      g.fillStyle(0x111318);
+      g.fillTriangle(w - 10, 6, w - 10, h - 6, w + 14, h / 2);
+      g.fillStyle(0x444b5a);
+      g.fillTriangle(w - 14, 12, w - 14, h - 12, w + 6, h / 2);
+      // Steel spikes protruding from plow
+      g.fillStyle(0xdde3ed);
+      g.fillTriangle(w + 10, h / 2 - 12, w + 10, h / 2 - 8, w + 18, h / 2 - 10);
+      g.fillTriangle(w + 12, h / 2 - 2, w + 12, h / 2 + 2, w + 22, h / 2);
+      g.fillTriangle(w + 10, h / 2 + 8, w + 10, h / 2 + 12, w + 18, h / 2 + 10);
 
-      // Front plow / ram
-      g.fillStyle(0x1a1a2a);
-      g.fillTriangle(w - 8, 8, w - 8, h - 8, w + 12, h / 2);
-      g.fillStyle(0x444455);
-      g.fillTriangle(w - 12, 14, w - 12, h - 14, w + 6, h / 2);
+      // Slotted steel armored windshield
+      g.fillStyle(0x0e121a);
+      g.fillRect(94, 18, 16, 34);
+      g.fillStyle(0x76829d);
+      for (let y = 20; y <= 48; y += 5) {
+        g.fillRect(94, y, 16, 2);
+      }
+      // Sinister red interior glow
+      g.fillStyle(0xff1111, 0.4);
+      g.fillRect(96, 22, 12, 26);
 
-      // Exhaust stacks (triple)
-      g.fillStyle(0x222222);
-      g.fillRect(40, 4, 8, 6);
-      g.fillRect(40, h - 10, 8, 6);
-      g.fillRect(60, 4, 8, 6);
-      g.fillRect(60, h - 10, 8, 6);
-
-      // Wheels (6 wheels - dual rear)
+      // Massive dual smoking chrome chimneys / exhaust
+      g.fillStyle(0x222630);
+      g.fillCircle(78, 12, 6);
+      g.fillCircle(78, h - 12, 6);
+      g.fillStyle(0x667287);
+      g.fillCircle(78, 12, 4);
+      g.fillCircle(78, h - 12, 4);
       g.fillStyle(0x111111);
-      g.fillRect(20, 0, 18, 8);
-      g.fillRect(20, h - 8, 18, 8);
-      g.fillRect(55, 0, 18, 8);
-      g.fillRect(55, h - 8, 18, 8);
-      g.fillRect(85, 0, 18, 8);
-      g.fillRect(85, h - 8, 18, 8);
-      // Rims
-      g.fillStyle(0x333333);
-      g.fillRect(23, 1, 12, 6);
-      g.fillRect(23, h - 7, 12, 6);
-      g.fillRect(58, 1, 12, 6);
-      g.fillRect(58, h - 7, 12, 6);
-      g.fillRect(88, 1, 12, 6);
-      g.fillRect(88, h - 7, 12, 6);
+      g.fillCircle(78, 12, 2.5);
+      g.fillCircle(78, h - 12, 2.5);
 
-      // "BOSS" text on side (blocky letters)
-      g.fillStyle(0xff4400);
+      // 8 massive treaded monster wheels
+      g.fillStyle(0x08090c);
+      for (const wx of [16, 42, 68, 96]) {
+        g.fillRect(wx, 0, 18, 8);
+        g.fillRect(wx, h - 8, 18, 8);
+        g.fillStyle(0x3a4252);
+        g.fillCircle(wx + 9, 4, 3);
+        g.fillCircle(wx + 9, h - 4, 3);
+        g.fillStyle(0x08090c);
+      }
+
+      // Menacing Crimson Quad Headlights
+      g.fillStyle(0xff0000);
+      g.fillCircle(w - 8, 14, 4);
+      g.fillCircle(w - 8, h - 14, 4);
+      g.fillStyle(0xffffff);
+      g.fillCircle(w - 7, 14, 1.5);
+      g.fillCircle(w - 7, h - 14, 1.5);
+      // Red menacing glow
+      g.fillStyle(0xff2222, 0.5);
+      g.fillCircle(w - 6, 14, 8);
+      g.fillCircle(w - 6, h - 14, 8);
+
+      // Bold hazard orange "BOSS" emblazoned on armored roof
+      g.fillStyle(0xff5500);
       // B
-      g.fillRect(18, 22, 2, 22);
-      g.fillRect(20, 22, 10, 4);
-      g.fillRect(30, 26, 2, 10);
-      g.fillRect(20, 33, 10, 4);
-      g.fillRect(30, 37, 2, 7);
-      g.fillRect(20, 44, 10, 4);
+      g.fillRect(24, 24, 3, 22);
+      g.fillRect(27, 24, 9, 3);
+      g.fillRect(36, 27, 3, 7);
+      g.fillRect(27, 34, 9, 3);
+      g.fillRect(36, 37, 3, 6);
+      g.fillRect(27, 43, 9, 3);
       // O
-      g.fillRect(34, 22, 12, 4);
-      g.fillRect(34, 44, 12, 4);
-      g.fillRect(34, 22, 4, 22);
-      g.fillRect(42, 22, 4, 22);
+      g.fillRect(42, 24, 11, 3);
+      g.fillRect(42, 43, 11, 3);
+      g.fillRect(42, 24, 3, 22);
+      g.fillRect(50, 24, 3, 22);
       // S
-      g.fillRect(48, 22, 10, 4);
-      g.fillRect(48, 22, 2, 11);
-      g.fillRect(48, 33, 10, 4);
-      g.fillRect(56, 33, 2, 11);
-      g.fillRect(48, 44, 10, 4);
+      g.fillRect(56, 24, 10, 3);
+      g.fillRect(56, 24, 3, 11);
+      g.fillRect(56, 34, 10, 3);
+      g.fillRect(63, 34, 3, 12);
+      g.fillRect(56, 43, 10, 3);
       // S
-      g.fillRect(60, 22, 10, 4);
-      g.fillRect(60, 22, 2, 11);
-      g.fillRect(60, 33, 10, 4);
-      g.fillRect(68, 33, 2, 11);
-      g.fillRect(60, 44, 10, 4);
+      g.fillRect(69, 24, 10, 3);
+      g.fillRect(69, 24, 3, 11);
+      g.fillRect(69, 34, 10, 3);
+      g.fillRect(76, 34, 3, 12);
+      g.fillRect(69, 43, 10, 3);
     });
 
     // =========================================================================
@@ -1887,284 +1844,582 @@ export default class AssetGenerator {
     // =========================================================================
     makeTexture('tanker', 110, 55, (g, w, h) => {
       // Shadow
-      g.fillStyle(0x000000, 0.3);
-      g.fillRoundedRect(3, 3, w - 3, h - 3, 5);
+      g.fillStyle(0x000000, 0.25);
+      g.fillRoundedRect(3, 3, w - 3, h - 3, 6);
 
-      // Cab (small)
-      g.fillStyle(0x442200);
-      g.fillRoundedRect(70, 8, 38, 39, 4);
+      // Cab front (cab over engine / conventional)
+      g.fillStyle(0x3a2210);
+      g.fillRoundedRect(72, 8, 36, 39, 4);
+      g.fillStyle(0x5a3418);
+      g.fillRoundedRect(74, 10, 32, 35, 3);
+      // Cab roof highlight
+      g.fillStyle(0x7a4822);
+      g.fillRect(75, 12, 18, 31);
       // Windshield
-      g.fillStyle(0x223355);
-      g.fillRoundedRect(85, 12, 18, 22, 2);
-      // Cab roof
-      g.fillStyle(0x663300);
-      g.fillRect(72, 8, 34, 4);
+      g.fillStyle(0x18243c);
+      g.fillRoundedRect(88, 12, 16, 31, 2);
+      g.fillStyle(0x4488cc, 0.4);
+      g.fillRect(90, 14, 5, 27);
+      // Chrome bumper & grille
+      g.fillStyle(0xcccccc);
+      g.fillRect(106, 12, 4, 31);
+      g.fillStyle(0xeeeeee);
+      g.fillRect(107, 14, 2, 27);
+      // Chrome exhaust stack
+      g.fillStyle(0x999999);
+      g.fillCircle(75, 12, 3);
+      g.fillCircle(75, 43, 3);
+      g.fillStyle(0xdddddd);
+      g.fillCircle(75, 12, 1.5);
+      g.fillCircle(75, 43, 1.5);
 
-      // Tanker body — silver cylinder
-      g.fillStyle(0xaaaaaa);
-      g.fillRoundedRect(0, 10, 72, 35, 5);
-      // Tank highlight
-      g.fillStyle(0xcccccc, 0.3);
-      g.fillRect(6, 12, 60, 12);
-      // Hazard stripes on back
-      g.fillStyle(0xff0000);
-      for (let i = 0; i < 4; i++) {
-        g.fillRect(4, 14 + i * 8, 60, 3);
-      }
-      g.fillStyle(0xffff00);
-      for (let i = 0; i < 4; i++) {
-        g.fillRect(4, 17 + i * 8, 60, 3);
-      }
-      // Flammable symbol
-      g.fillStyle(0xff0000);
-      g.fillTriangle(20, 25, 36, 25, 28, 40);
-      g.fillStyle(0x000000);
-      g.fillTriangle(22, 27, 34, 27, 28, 37);
+      // Cylindrical Tank body — brushed stainless steel
+      g.fillStyle(0x787d85);
+      g.fillRoundedRect(2, 9, 72, 37, 6);
+      // Tank 3D metallic highlights (top reflection)
+      g.fillStyle(0xcfd4dc);
+      g.fillRect(4, 13, 66, 8);
+      g.fillStyle(0xffffff, 0.5);
+      g.fillRect(4, 15, 66, 3);
+      // Tank lower shadow (belly)
+      g.fillStyle(0x4d525a);
+      g.fillRect(4, 33, 66, 11);
+      // Tank weld rings / baffles
+      g.lineStyle(1.5, 0x5a6068, 0.9);
+      g.lineBetween(18, 9, 18, 46);
+      g.lineBetween(38, 9, 38, 46);
+      g.lineBetween(58, 9, 58, 46);
+      // Catwalk down spine
+      g.fillStyle(0x3a3d42);
+      g.fillRect(8, 26, 56, 3);
+      // Dome inspection hatches
+      g.fillStyle(0x888e96);
+      g.fillCircle(28, 27, 4);
+      g.fillCircle(48, 27, 4);
+      g.fillStyle(0xdddddd);
+      g.fillCircle(28, 27, 2);
+      g.fillCircle(48, 27, 2);
 
-      // Wheels
-      g.fillStyle(0x111111);
-      g.fillRect(10, 2, 16, 6);
-      g.fillRect(10, h - 8, 16, 6);
-      g.fillRect(35, 2, 16, 6);
-      g.fillRect(35, h - 8, 16, 6);
-      g.fillRect(48, 0, 14, 5);
-      g.fillRect(48, h - 5, 14, 5);
+      // Flammable placard (diamond hazard symbol)
+      g.fillStyle(0xdd1111);
+      g.fillRect(8, 14, 8, 8);
+      g.fillStyle(0xffffff);
+      g.fillRect(9, 15, 6, 6);
+      g.fillStyle(0xdd1111);
+      g.fillRect(10, 16, 4, 4);
+
+      // Heavy duty wheels
+      g.fillStyle(0x0c0c0c);
+      g.fillRect(10, 2, 16, 7);
+      g.fillRect(10, h - 9, 16, 7);
+      g.fillRect(32, 2, 16, 7);
+      g.fillRect(32, h - 9, 16, 7);
+      g.fillRect(52, 2, 16, 7);
+      g.fillRect(52, h - 9, 16, 7);
+      g.fillRect(84, 2, 16, 7);
+      g.fillRect(84, h - 9, 16, 7);
+      // Chrome hubcaps
+      g.fillStyle(0x888888);
+      for (const wx of [18, 40, 60, 92]) {
+        g.fillCircle(wx, 5, 2.5);
+        g.fillCircle(wx, h - 5.5, 2.5);
+        g.fillStyle(0xcccccc);
+        g.fillCircle(wx, 5, 1);
+        g.fillCircle(wx, h - 5.5, 1);
+        g.fillStyle(0x888888);
+      }
+      // Headlights & Taillights
+      g.fillStyle(0xffffcc);
+      g.fillCircle(107, 16, 2.5);
+      g.fillCircle(107, 39, 2.5);
+      g.fillStyle(0xff1111);
+      g.fillCircle(3, 14, 2.5);
+      g.fillCircle(3, 41, 2.5);
     });
 
     // =========================================================================
     // 37. MOTORCYCLE (35x18) — Fast traffic
     // =========================================================================
     makeTexture('motorcycle', 35, 18, (g, w, h) => {
-      const colors = [0xcc0000, 0x0000cc, 0x00cc00, 0xffcc00, 0xff00cc];
-      const bodyColor = colors[Math.floor(Math.random() * colors.length)];
-      // Shadow
-      g.fillStyle(0x000000, 0.2);
-      g.fillEllipse(w/2, h/2 + 2, w - 4, h - 4);
+      // Soft shadow
+      g.fillStyle(0x000000, 0.25);
+      g.fillEllipse(w / 2, h / 2 + 1, w - 2, h - 3);
 
-      // Body
-      g.fillStyle(bodyColor);
-      g.fillRoundedRect(6, 3, 22, 12, 3);
-      // Seat
+      // Front tire & fork
       g.fillStyle(0x111111);
-      g.fillRoundedRect(18, 1, 10, 5, 2);
-      // Engine
-      g.fillStyle(0x333333);
-      g.fillRect(6, 8, 8, 7);
-      // Exhaust
-      g.fillStyle(0x666666);
-      g.fillRect(4, 12, 4, 4);
+      g.fillRoundedRect(w - 7, 7, 6, 4, 1.5);
+      g.fillStyle(0x888888);
+      g.fillRect(w - 9, 6, 3, 6);
 
-      // Wheels
-      g.fillStyle(0x000000);
-      g.fillCircle(9, h - 1, 5);
-      g.fillCircle(w - 8, h - 1, 5);
-      g.fillStyle(0x333333);
-      g.fillCircle(9, h - 1, 2);
-      g.fillCircle(w - 8, h - 1, 2);
+      // Rear tire
+      g.fillStyle(0x111111);
+      g.fillRoundedRect(1, 6, 7, 6, 2);
 
-      // Headlight
+      // Main frame & engine block
+      g.fillStyle(0x222228);
+      g.fillRect(8, 5, 18, 8);
+      // Chrome engine cooling fins
+      g.fillStyle(0x777788);
+      g.fillRect(10, 6, 8, 2);
+      g.fillRect(10, 10, 8, 2);
+
+      // Chrome exhaust pipe
+      g.fillStyle(0xcccccc);
+      g.fillRect(6, 13, 16, 2);
+      g.fillStyle(0x555555);
+      g.fillRect(4, 13, 2, 2);
+
+      // Aerodynamic fairing / bodywork (Sportbike red)
+      g.fillStyle(0xd91414);
+      g.fillTriangle(w - 12, 4, w - 12, 14, w - 2, 9);
+      g.fillRect(14, 5, 10, 8);
+
+      // Tinted windscreen
+      g.fillStyle(0x1a2e4a);
+      g.fillTriangle(w - 10, 6, w - 10, 12, w - 5, 9);
+
+      // Clip-on handlebars & mirrors
+      g.fillStyle(0x111111);
+      g.fillRect(w - 11, 2, 2, 14);
+      g.fillCircle(w - 10, 2, 1.5);
+      g.fillCircle(w - 10, 16, 1.5);
+
+      // Rider in leather suit leaning forward
+      g.fillStyle(0x1f232c);
+      g.fillEllipse(17, 9, 10, 6);
+      // Helmet (matching bodywork with visor)
+      g.fillStyle(0xd91414);
+      g.fillCircle(20, 9, 3.5);
+      g.fillStyle(0x111111);
+      g.fillRect(21, 7.5, 3, 3);
+
+      // Bright halogen headlight
       g.fillStyle(0xffffcc);
-      g.fillCircle(w - 2, 8, 3);
+      g.fillCircle(w - 2, 9, 2);
+      // Tail light
+      g.fillStyle(0xff1111);
+      g.fillCircle(2, 9, 1.5);
     });
 
     // =========================================================================
     // 38. AMBULANCE (60x35) — Emergency vehicle
     // =========================================================================
     makeTexture('ambulance', 60, 35, (g) => {
+      const w = 60;
+      const h = 35;
       // Shadow
       g.fillStyle(0x000000, 0.25);
-      g.fillRoundedRect(3, 3, 54, 32, 5);
+      g.fillRoundedRect(3, 3, w - 3, h - 3, 5);
 
-      // White body
+      // Crisp white chassis
+      g.fillStyle(0xf4f6f8);
+      g.fillRoundedRect(0, 4, w - 4, h - 8, 4);
+
+      // Paramedic red stripes along side
+      g.fillStyle(0xd61c1c);
+      g.fillRect(5, 5, w - 12, 3);
+      g.fillRect(5, h - 8, w - 12, 3);
+
+      // High-visibility rear chevron pattern (safety stripes)
+      for (let i = 0; i < 4; i++) {
+        g.fillStyle(0xd61c1c);
+        g.fillRect(1, 6 + i * 6, 4, 3);
+        g.fillStyle(0xffcc00);
+        g.fillRect(1, 9 + i * 6, 4, 3);
+      }
+
+      // Cab windshield
+      g.fillStyle(0x142238);
+      g.fillRoundedRect(40, 8, 12, 19, 2);
+      g.fillStyle(0x4488cc, 0.35);
+      g.fillRect(42, 10, 4, 15);
+      g.lineStyle(1, 0x111111, 0.8);
+      g.strokeRoundedRect(40, 8, 12, 19, 2);
+
+      // Side paramedic windows
+      g.fillStyle(0x142238);
+      g.fillRect(14, 6, 18, 3);
+      g.fillRect(14, h - 9, 18, 3);
+
+      // Red Star of Life / Medical cross on roof
+      g.fillStyle(0xd61c1c);
+      g.fillRect(20, 11, 8, 13);
+      g.fillRect(15, 14, 18, 7);
       g.fillStyle(0xffffff);
-      g.fillRoundedRect(0, 4, 56, 30, 5);
-      // Red cross on side
-      g.fillStyle(0xcc0000);
-      g.fillRect(18, 10, 8, 18);
-      g.fillRect(14, 16, 16, 8);
-      // Red stripe
-      g.fillStyle(0xcc0000);
-      g.fillRect(4, 12, 50, 4);
-      // Blue stripe
-      g.fillStyle(0x0044cc);
-      g.fillRect(4, 18, 50, 4);
-      // Light bar
-      g.fillStyle(0x222222);
-      g.fillRect(10, 4, 35, 6);
-      g.fillStyle(0xff0000);
-      g.fillRect(12, 6, 8, 4);
-      g.fillStyle(0x0044cc);
-      g.fillRect(28, 6, 8, 4);
+      g.fillRect(22, 13, 4, 9);
+      g.fillRect(17, 16, 14, 3);
 
-      // Wheels
+      // Roof emergency lightbar (pulsing red/blue/white)
       g.fillStyle(0x111111);
-      g.fillRect(8, 0, 14, 5);
-      g.fillRect(8, 30, 14, 5);
-      g.fillRect(34, 0, 14, 5);
-      g.fillRect(34, 30, 14, 5);
-      g.fillStyle(0x444444);
-      g.fillRect(10, 1, 10, 3);
-      g.fillRect(10, 31, 10, 3);
-      g.fillRect(36, 1, 10, 3);
-      g.fillRect(36, 31, 10, 3);
+      g.fillRect(36, 10, 5, 15);
+      g.fillStyle(0xff1111);
+      g.fillCircle(38, 12, 2.5);
+      g.fillStyle(0x1166ff);
+      g.fillCircle(38, 23, 2.5);
+      g.fillStyle(0xffffff);
+      g.fillCircle(38, 17.5, 1.5);
+      // Strobe halos
+      g.fillStyle(0xff2222, 0.35);
+      g.fillCircle(38, 12, 5);
+      g.fillStyle(0x2288ff, 0.35);
+      g.fillCircle(38, 23, 5);
+
+      // Heavy duty wheels
+      g.fillStyle(0x111111);
+      g.fillRect(8, 0, 11, 5);
+      g.fillRect(8, h - 5, 11, 5);
+      g.fillRect(38, 0, 11, 5);
+      g.fillRect(38, h - 5, 11, 5);
+      g.fillStyle(0x888888);
+      g.fillCircle(13, 2.5, 2);
+      g.fillCircle(13, h - 2.5, 2);
+      g.fillCircle(43, 2.5, 2);
+      g.fillCircle(43, h - 2.5, 2);
+
+      // Headlights & bumper
+      g.fillStyle(0xcccccc);
+      g.fillRect(w - 5, 7, 3, 21);
+      g.fillStyle(0xffffcc);
+      g.fillCircle(w - 4, 10, 2);
+      g.fillCircle(w - 4, 25, 2);
     });
 
     // =========================================================================
     // 39. FIRE TRUCK (70x40) — Big emergency
     // =========================================================================
     makeTexture('firetruck', 70, 40, (g) => {
+      const w = 70;
+      const h = 40;
       // Shadow
       g.fillStyle(0x000000, 0.3);
-      g.fillRoundedRect(4, 4, 62, 36, 5);
+      g.fillRoundedRect(4, 4, w - 4, h - 4, 5);
 
-      // Red body
-      g.fillStyle(0xcc0000);
-      g.fillRoundedRect(0, 5, 65, 35, 5);
-      // White stripes
-      g.fillStyle(0xffffff);
-      g.fillRect(4, 14, 58, 3);
-      g.fillRect(4, 24, 58, 3);
-      // Ladder on top
-      g.fillStyle(0x888888);
-      g.fillRect(8, 2, 50, 4);
-      g.fillStyle(0x666666);
-      for (let x = 12; x < 55; x += 6) {
-        g.fillRect(x, 2, 2, 4);
+      // Main cab & body — Fire Engine Red
+      g.fillStyle(0xb51212);
+      g.fillRoundedRect(0, 5, w - 4, h - 10, 5);
+
+      // Gold leaf accent pinstripe along side
+      g.fillStyle(0xffcc00);
+      g.fillRect(6, 6, w - 14, 2);
+      g.fillRect(6, h - 8, w - 14, 2);
+
+      // Chrome diamond-plate side panels
+      g.fillStyle(0x88929e);
+      g.fillRect(16, 7, 30, 3);
+      g.fillRect(16, h - 10, 30, 3);
+
+      // Large cab windshield
+      g.fillStyle(0x142036);
+      g.fillRoundedRect(48, 9, 14, 22, 2);
+      g.fillStyle(0x4488cc, 0.4);
+      g.fillRect(50, 11, 5, 18);
+      g.lineStyle(1.5, 0x111111, 1);
+      g.strokeRoundedRect(48, 9, 14, 22, 2);
+
+      // Roof aluminum extension ladder with detailed rungs
+      g.fillStyle(0x333b45);
+      g.fillRect(4, 13, 44, 14);
+      g.fillStyle(0xcccccc);
+      g.fillRect(4, 13, 44, 2);
+      g.fillRect(4, 25, 44, 2);
+      for (let x = 8; x <= 44; x += 4) {
+        g.fillRect(x, 15, 2, 10);
       }
 
-      // Light bar
-      g.fillStyle(0x222222);
-      g.fillRect(15, 5, 35, 5);
-      g.fillStyle(0xff0000);
-      g.fillRect(17, 6, 6, 3);
-      g.fillRect(27, 6, 6, 3);
-      g.fillRect(37, 6, 6, 3);
+      // Chrome brass water cannon / deck gun
+      g.fillStyle(0xddaa22);
+      g.fillCircle(46, 20, 3);
+      g.fillRect(46, 19, 7, 2);
 
-      // Wheels (6)
-      g.fillStyle(0x111111);
-      g.fillRect(10, 1, 16, 6);
-      g.fillRect(10, 33, 16, 6);
-      g.fillRect(38, 1, 16, 6);
-      g.fillRect(38, 33, 16, 6);
-      g.fillStyle(0x444444);
-      g.fillRect(12, 2, 12, 4);
-      g.fillRect(12, 34, 12, 4);
-      g.fillRect(40, 2, 12, 4);
-      g.fillRect(40, 34, 12, 4);
+      // Chrome air horns on cab
+      g.fillStyle(0xeeeeee);
+      g.fillRect(46, 8, 8, 2);
+      g.fillRect(46, h - 10, 8, 2);
+
+      // Emergency roof lightbar (dual strobes + siren)
+      g.fillStyle(0x222222);
+      g.fillRect(44, 14, 4, 12);
+      g.fillStyle(0xff1111);
+      g.fillCircle(46, 15, 3);
+      g.fillCircle(46, 25, 3);
+      g.fillStyle(0xffffff);
+      g.fillCircle(46, 15, 1);
+      g.fillCircle(46, 25, 1);
+      // Light bloom
+      g.fillStyle(0xff2222, 0.4);
+      g.fillCircle(46, 15, 6);
+      g.fillCircle(46, 25, 6);
+
+      // Triple axle (6 heavy duty wheels)
+      g.fillStyle(0x0e0e0e);
+      g.fillRect(10, 1, 13, 5);
+      g.fillRect(10, h - 6, 13, 5);
+      g.fillRect(26, 1, 13, 5);
+      g.fillRect(26, h - 6, 13, 5);
+      g.fillRect(46, 1, 13, 5);
+      g.fillRect(46, h - 6, 13, 5);
+      // Wheel rims
+      g.fillStyle(0x888888);
+      for (const wx of [16, 32, 52]) {
+        g.fillCircle(wx, 3.5, 2.5);
+        g.fillCircle(wx, h - 3.5, 2.5);
+        g.fillStyle(0xdddddd);
+        g.fillCircle(wx, 3.5, 1);
+        g.fillCircle(wx, h - 3.5, 1);
+        g.fillStyle(0x888888);
+      }
+
+      // Heavy chrome front bumper & headlights
+      g.fillStyle(0xdddddd);
+      g.fillRect(w - 5, 8, 3, 24);
+      g.fillStyle(0xffffff);
+      g.fillCircle(w - 4, 12, 2.5);
+      g.fillCircle(w - 4, 28, 2.5);
     });
 
     // =========================================================================
-    // 40. PICKUP TRUCK (65x35) — Civilian
+    // 40. PICKUP TRUCK (65x35) — 4x4 Off-Road
     // =========================================================================
     makeTexture('pickup', 65, 35, (g) => {
-      const colors = [0x4444aa, 0x44aa44, 0xaa4444, 0xaaaa44, 0x888888];
+      const w = 65;
+      const h = 35;
+      const colors = [0x2244aa, 0x1d6a2d, 0xaa2d1d, 0xb88814, 0x3d434d];
       const bodyColor = colors[Math.floor(Math.random() * colors.length)];
+
       // Shadow
       g.fillStyle(0x000000, 0.25);
-      g.fillRoundedRect(3, 3, 59, 32, 5);
+      g.fillRoundedRect(3, 3, w - 3, h - 3, 5);
 
-      // Cab
+      // 4x4 body base
       g.fillStyle(bodyColor);
-      g.fillRoundedRect(35, 5, 28, 25, 4);
+      g.fillRoundedRect(0, 4, w - 4, h - 8, 4);
+
+      // Cab section
+      g.fillStyle(bodyColor);
+      g.fillRoundedRect(28, 5, 32, 25, 4);
+
       // Windshield
-      g.fillStyle(0x223355);
-      g.fillRoundedRect(42, 8, 16, 12, 2);
-      // Bed
-      g.fillStyle(bodyColor);
-      g.fillRect(4, 10, 30, 18);
-      // Bed liner
-      g.fillStyle(0x222222, 0.4);
-      g.fillRect(6, 12, 26, 14);
-      // Tailgate
-      g.fillStyle(0x666666);
-      g.fillRect(2, 10, 4, 18);
+      g.fillStyle(0x142036);
+      g.fillRoundedRect(42, 8, 14, 19, 2);
+      g.fillStyle(0x4488cc, 0.35);
+      g.fillRect(44, 10, 4, 15);
+      g.lineStyle(1.5, 0x111111, 1);
+      g.strokeRoundedRect(42, 8, 14, 19, 2);
 
-      // Wheels
-      g.fillStyle(0x111111);
-      g.fillRect(10, 0, 14, 5);
-      g.fillRect(10, 30, 14, 5);
-      g.fillRect(40, 0, 14, 5);
-      g.fillRect(40, 30, 14, 5);
+      // Rear cab window
+      g.fillStyle(0x142036);
+      g.fillRect(29, 9, 3, 17);
+
+      // Truck bed with textured liner
+      g.fillStyle(0x181a1f);
+      g.fillRect(4, 7, 24, 21);
+
+      // Cargo in bed: diamond plate toolbox + cargo crate + spare tire
+      // Toolbox
+      g.fillStyle(0x88929e);
+      g.fillRect(20, 8, 7, 19);
+      g.fillStyle(0x505760);
+      g.fillRect(23, 9, 2, 17);
+      // Wooden cargo crate
+      g.fillStyle(0x8b5a2b);
+      g.fillRect(6, 8, 11, 11);
+      g.lineStyle(1, 0x5a3418, 0.8);
+      g.strokeRect(6, 8, 11, 11);
+      g.lineBetween(6, 8, 17, 19);
+      // Spare tire in bed
+      g.fillStyle(0x0e0e0e);
+      g.fillCircle(12, 23, 4.5);
       g.fillStyle(0x444444);
-      g.fillRect(12, 1, 10, 3);
-      g.fillRect(12, 31, 10, 3);
-      g.fillRect(42, 1, 10, 3);
-      g.fillRect(42, 31, 10, 3);
+      g.fillCircle(12, 23, 2);
+
+      // Chrome roll bar behind cab
+      g.fillStyle(0xdddddd);
+      g.fillRect(26, 6, 2, 23);
+      g.fillCircle(27, 11, 1.5);
+      g.fillCircle(27, 24, 1.5);
+
+      // Aggressive off-road wheels
+      g.fillStyle(0x0a0a0a);
+      g.fillRect(8, 0, 13, 6);
+      g.fillRect(8, h - 6, 13, 6);
+      g.fillRect(42, 0, 13, 6);
+      g.fillRect(42, h - 6, 13, 6);
+      // Beadlock alloy rims
+      g.fillStyle(0x444444);
+      g.fillCircle(14, 3, 3);
+      g.fillCircle(14, h - 3, 3);
+      g.fillCircle(48, 3, 3);
+      g.fillCircle(48, h - 3, 3);
+      g.fillStyle(0x999999);
+      g.fillCircle(14, 3, 1.5);
+      g.fillCircle(14, h - 3, 1.5);
+      g.fillCircle(48, 3, 1.5);
+      g.fillCircle(48, h - 3, 1.5);
+
+      // Bumper & Headlights
+      g.fillStyle(0x333b45);
+      g.fillRect(w - 5, 6, 4, 23);
+      g.fillStyle(0xffffcc);
+      g.fillCircle(w - 4, 9, 2.5);
+      g.fillCircle(w - 4, 26, 2.5);
+      // Tailgate & lights
+      g.fillStyle(0xff1111);
+      g.fillCircle(2, 7, 2);
+      g.fillCircle(2, 28, 2);
     });
 
     // =========================================================================
-    // 41. SPORTS CAR LOW (55x28) — Very fast
+    // 41. SPORTS CAR LOW (55x28) — Hypercar / Exotic
     // =========================================================================
     makeTexture('sports_low', 55, 28, (g) => {
-      const colors = [0xff2222, 0x22ff22, 0x2222ff, 0xffff22, 0xff22ff, 0xffffff];
+      const w = 55;
+      const h = 28;
+      const colors = [0xd61414, 0x18bb24, 0x1455d6, 0xeecc00, 0x9914d6, 0xf0f2f5];
       const bodyColor = colors[Math.floor(Math.random() * colors.length)];
+
       // Shadow
-      g.fillStyle(0x000000, 0.2);
-      g.fillEllipse(27, 14, 50, 24);
+      g.fillStyle(0x000000, 0.25);
+      g.fillEllipse(w / 2, h / 2 + 1, w - 2, h - 3);
 
-      // Ultra-low body
+      // Sleek sculpted widebody
       g.fillStyle(bodyColor);
-      g.fillRoundedRect(3, 4, 49, 20, 3);
-      // Windshield (raked)
-      g.fillStyle(0x112244);
-      g.fillTriangle(30, 6, 30, 22, 45, 12);
-      // Spoiler
-      g.fillStyle(0x222222);
-      g.fillRect(4, 2, 47, 2);
-      // Side skirts
-      g.fillStyle(0x000000);
-      g.fillRect(5, 22, 45, 2);
+      g.fillRoundedRect(2, 3, w - 4, h - 6, 4);
 
-      // Wheels (exposed)
-      g.fillStyle(0x000000);
-      g.fillCircle(12, 23, 6);
-      g.fillCircle(43, 23, 6);
+      // Side aerodynamic scoops (air intakes)
+      g.fillStyle(0x141820);
+      g.fillRect(16, 3, 10, 2);
+      g.fillRect(16, h - 5, 10, 2);
+
+      // Jet-fighter canopy (tinted dark with reflections)
+      g.fillStyle(0x101a2e);
+      g.fillRoundedRect(18, 6, 22, 16, 5);
+      g.fillStyle(0x4488cc, 0.4);
+      g.fillTriangle(30, 8, 30, 20, 38, 14);
+
+      // Dual racing bucket seats inside
+      g.fillStyle(0xd61414);
+      g.fillRect(22, 8, 5, 4);
+      g.fillRect(22, 16, 5, 4);
+
+      // Carbon fiber rear wing spoiler with endplates
+      g.fillStyle(0x15181f);
+      g.fillRect(3, 3, 4, h - 6);
+      g.fillRect(2, 2, 6, 3);
+      g.fillRect(2, h - 5, 6, 3);
+
+      // Quad exhaust pipes in center rear
+      g.fillStyle(0x8899aa);
+      g.fillCircle(2, 12, 1.5);
+      g.fillCircle(2, 16, 1.5);
+
+      // Large alloy wheels with visible brake calipers
+      g.fillStyle(0x0a0a0a);
+      g.fillRect(9, 0, 10, 5);
+      g.fillRect(9, h - 5, 10, 5);
+      g.fillRect(35, 0, 10, 5);
+      g.fillRect(35, h - 5, 10, 5);
+      // Red Brembo calipers
+      g.fillStyle(0xff1111);
+      g.fillRect(10, 1, 2, 3);
+      g.fillRect(10, h - 4, 2, 3);
+      g.fillRect(36, 1, 2, 3);
+      g.fillRect(36, h - 4, 2, 3);
+      // Alloy rims
       g.fillStyle(0xcccccc);
-      g.fillCircle(12, 23, 2.5);
-      g.fillCircle(43, 23, 2.5);
+      g.fillCircle(14, 2.5, 2);
+      g.fillCircle(14, h - 2.5, 2);
+      g.fillCircle(40, 2.5, 2);
+      g.fillCircle(40, h - 2.5, 2);
 
-      // Headlights (pop-up)
-      g.fillStyle(0xffffcc);
-      g.fillCircle(50, 8, 2.5);
-      g.fillCircle(50, 20, 2.5);
+      // Aggressive LED headlights
+      g.fillStyle(0xffffff);
+      g.fillCircle(w - 4, 6, 2);
+      g.fillCircle(w - 4, h - 6, 2);
+      g.fillStyle(0x88ccff);
+      g.fillCircle(w - 3, 6, 1);
+      g.fillCircle(w - 3, h - 6, 1);
     });
 
     // =========================================================================
-    // 42. BUS (85x40) — Slow, big
+    // 42. BUS (85x40) — City Transit / Coach
     // =========================================================================
     makeTexture('bus', 85, 40, (g) => {
+      const w = 85;
+      const h = 40;
       // Shadow
       g.fillStyle(0x000000, 0.3);
-      g.fillRoundedRect(4, 4, 77, 36, 5);
+      g.fillRoundedRect(4, 4, w - 4, h - 4, 5);
 
-      // Yellow body
-      g.fillStyle(0xffcc00);
-      g.fillRoundedRect(0, 5, 80, 35, 5);
-      // Windows
-      g.fillStyle(0x223355);
-      for (let x = 10; x < 70; x += 10) {
-        g.fillRect(x, 8, 8, 20);
-      }
-      // Front window
-      g.fillRect(68, 8, 10, 20);
-      // Door
-      g.fillStyle(0xeedd00);
-      g.fillRect(4, 15, 14, 20);
-      // Stripe
-      g.fillStyle(0x000000);
-      g.fillRect(4, 12, 75, 2);
+      // Clean bright transit yellow body
+      g.fillStyle(0xf0b800);
+      g.fillRoundedRect(0, 4, w - 4, h - 8, 4);
 
-      // Wheels (6)
+      // Accent color stripe (deep navy blue)
+      g.fillStyle(0x182c54);
+      g.fillRect(4, 10, w - 10, 2);
+      g.fillRect(4, h - 12, w - 10, 2);
+
+      // Front panoramic windshield
+      g.fillStyle(0x142036);
+      g.fillRoundedRect(64, 8, 16, 24, 2);
+      g.fillStyle(0x4488cc, 0.35);
+      g.fillRect(66, 10, 5, 20);
+
+      // Digital route destination sign ("EXPRESS")
       g.fillStyle(0x111111);
-      g.fillRect(12, 0, 16, 6);
-      g.fillRect(12, 34, 16, 6);
-      g.fillRect(40, 0, 16, 6);
-      g.fillRect(40, 34, 16, 6);
-      g.fillStyle(0x444444);
-      g.fillRect(14, 1, 12, 4);
-      g.fillRect(14, 35, 12, 4);
-      g.fillRect(42, 1, 12, 4);
-      g.fillRect(42, 35, 12, 4);
+      g.fillRect(72, 13, 4, 14);
+      g.fillStyle(0xffaa00);
+      g.fillRect(73, 14, 2, 12);
+
+      // Passenger panoramic tinted windows with frame posts
+      for (let x = 8; x < 60; x += 9) {
+        g.fillStyle(0x142036);
+        g.fillRect(x, 6, 7, 4);
+        g.fillRect(x, h - 10, 7, 4);
+        // Commuter silhouettes inside
+        g.fillStyle(0x3a4860);
+        g.fillCircle(x + 3.5, 8, 1.5);
+        g.fillCircle(x + 3.5, h - 8, 1.5);
+      }
+
+      // Bi-fold passenger entry doors
+      g.fillStyle(0x223048);
+      g.fillRect(52, 4, 9, 3);
+      g.lineStyle(1, 0xdddddd, 0.6);
+      g.lineBetween(56, 4, 56, 7);
+
+      // Rooftop air conditioning climate pods
+      g.fillStyle(0xd9dadf);
+      g.fillRoundedRect(20, 14, 16, 12, 3);
+      g.fillRoundedRect(42, 14, 16, 12, 3);
+      g.fillStyle(0x8c8e96);
+      g.fillRect(22, 16, 12, 2);
+      g.fillRect(22, 22, 12, 2);
+      g.fillRect(44, 16, 12, 2);
+      g.fillRect(44, 22, 12, 2);
+
+      // Heavy transit wheels (dual rear)
+      g.fillStyle(0x0e0e0e);
+      g.fillRect(12, 0, 15, 5);
+      g.fillRect(12, h - 5, 15, 5);
+      g.fillRect(28, 0, 15, 5);
+      g.fillRect(28, h - 5, 15, 5);
+      g.fillRect(58, 0, 15, 5);
+      g.fillRect(58, h - 5, 15, 5);
+      // Hubcaps
+      g.fillStyle(0x777777);
+      for (const wx of [19, 35, 65]) {
+        g.fillCircle(wx, 2.5, 2);
+        g.fillCircle(wx, h - 2.5, 2);
+      }
+
+      // Headlights & Taillights
+      g.fillStyle(0xffffff);
+      g.fillCircle(w - 4, 10, 2.5);
+      g.fillCircle(w - 4, 30, 2.5);
+      g.fillStyle(0xff1111);
+      g.fillCircle(2, 9, 2);
+      g.fillCircle(2, 31, 2);
     });
 
     // =========================================================================

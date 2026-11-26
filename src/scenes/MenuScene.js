@@ -247,38 +247,55 @@ export default class MenuScene extends Phaser.Scene {
     this.overlay.add(dim);
 
     // Panel
-    const panel = this.add.rectangle(width / 2, height / 2, 400, 250, 0x1a1a2e, 1);
-    panel.setStrokeStyle(2, 0xff4400);
+    const panelW = 480;
+    const panelH = 270;
+    const panelX = width / 2;
+    const panelY = height / 2;
+    const panel = this.add.rectangle(panelX, panelY, panelW, panelH, 0x141828, 0.96);
+    panel.setStrokeStyle(2, 0xff5500);
     this.overlay.add(panel);
 
+    // Inner glowing border accent
+    const innerBorder = this.add.rectangle(panelX, panelY, panelW - 8, panelH - 8);
+    innerBorder.setStrokeStyle(1, 0x334466);
+    this.overlay.add(innerBorder);
+
     // Title
-    const title = this.add.text(width / 2, height / 2 - 95, 'SETTINGS', {
+    const title = this.add.text(panelX, panelY - 96, 'AUDIO SETTINGS', {
       fontFamily: 'Impact, Arial Black, sans-serif',
-      fontSize: '28px',
-      color: '#ff4400',
+      fontSize: '26px',
+      color: '#ff5500',
+      letterSpacing: 1,
     }).setOrigin(0.5);
     this.overlay.add(title);
 
-    // Volume label - centered on left side of panel
-    const volLabel = this.add.text(width / 2 - 180, height / 2 - 40, 'VOLUME', {
+    // Divider line
+    const divLine = this.add.rectangle(panelX, panelY - 70, panelW - 60, 2, 0x2a3350);
+    this.overlay.add(divLine);
+
+    // Volume label - positioned with comfortable margins inside panel
+    const rowY1 = panelY - 26;
+    const volLabel = this.add.text(panelX - 200, rowY1, '🔊 VOLUME', {
       fontFamily: 'Impact, Arial Black, sans-serif',
-      fontSize: '14px',
+      fontSize: '15px',
       color: '#ffcc00',
       letterSpacing: 1,
     }).setOrigin(0, 0.5);
     this.overlay.add(volLabel);
 
-    // Volume slider track - centered in panel
-    const sliderX = width / 2 - 100;
-    const sliderY = height / 2 - 40;
+    // Volume slider track
+    const sliderX = panelX - 90;
+    const sliderY = rowY1;
     const sliderW = 200;
-    const track = this.add.rectangle(sliderX + sliderW / 2, sliderY, sliderW, 12, 0x2a2a3a);
-    track.setStrokeStyle(2, 0x444466);
+    const track = this.add.rectangle(sliderX + sliderW / 2, sliderY, sliderW, 14, 0x1c2236);
+    track.setStrokeStyle(2, 0x3d4b70);
+    track.setInteractive({ useHandCursor: true });
     this.overlay.add(track);
-    // Track background segments for visual feedback
+
+    // Track segments for visual ticks
     for (let i = 0; i < 10; i++) {
-      const seg = this.add.rectangle(sliderX + i * 20 + 10, sliderY, 16, 6, 0x1a1a2a);
-      seg.setStrokeStyle(1, 0x333355);
+      const seg = this.add.rectangle(sliderX + i * 20 + 10, sliderY, 16, 6, 0x121624);
+      seg.setStrokeStyle(1, 0x2a3450);
       this.overlay.add(seg);
     }
 
@@ -290,75 +307,90 @@ export default class MenuScene extends Phaser.Scene {
     fillBar.setMask(fillMask.createGeometryMask());
     this.overlay.add(fillBar);
 
-    const handle = this.add.circle(sliderX + sliderW * currentVol, sliderY, 16, 0xff7722);
+    const handleGlow = this.add.circle(sliderX + sliderW * currentVol, sliderY, 20, 0xff5500, 0.3);
+    this.overlay.add(handleGlow);
+
+    const handle = this.add.circle(sliderX + sliderW * currentVol, sliderY, 15, 0xff7722);
     handle.setStrokeStyle(3, 0xffcc00);
     handle.setInteractive({ draggable: true, useHandCursor: true });
     this.overlay.add(handle);
-    // Handle glow
-    const handleGlow = this.add.circle(sliderX + sliderW * currentVol, sliderY, 22, 0xff5500, 0.3);
-    this.overlay.add(handleGlow);
 
-    // Percentage text - right of slider, within panel
+    // Percentage text - comfortably inside the right border
     const volText = this.add.text(sliderX + sliderW + 20, sliderY, Math.round(currentVol * 100) + '%', {
       fontFamily: 'Impact, Arial Black, sans-serif',
-      fontSize: '18px',
+      fontSize: '17px',
       color: '#ffcc00',
       stroke: '#000000',
       strokeThickness: 3,
     }).setOrigin(0, 0.5);
     this.overlay.add(volText);
 
-    handle.on('drag', (_pointer, dragX) => {
-      const clampedX = Phaser.Math.Clamp(dragX, sliderX, sliderX + sliderW);
+    const applyVolume = (xPos) => {
+      const clampedX = Phaser.Math.Clamp(xPos, sliderX, sliderX + sliderW);
       handle.x = clampedX;
       handleGlow.x = clampedX;
       const vol = (clampedX - sliderX) / sliderW;
       fillBar.width = sliderW * vol;
-      // Update mask
       fillMask.clear();
       fillMask.fillRect(sliderX, sliderY - 6, sliderW * vol, 12);
       volText.setText(Math.round(vol * 100) + '%');
       if (this.game.audioManager) {
         this.game.audioManager.setVolume(vol);
       }
+    };
+
+    handle.on('drag', (_pointer, dragX) => {
+      applyVolume(dragX);
     });
 
-    // Volume icon
-    const volIcon = this.add.text(sliderX - 40, sliderY, '🔊', { fontSize: '20px' }).setOrigin(0.5);
-    this.overlay.add(volIcon);
+    track.on('pointerdown', (pointer) => {
+      applyVolume(pointer.x);
+    });
 
-    // Mute toggle
-    const muteLabel = this.add.text(width / 2 - 120, height / 2 + 20, 'Mute:', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '16px',
+    // Mute toggle row
+    const rowY2 = panelY + 34;
+    const muteLabel = this.add.text(panelX - 200, rowY2, '🔇 MUTE AUDIO', {
+      fontFamily: 'Impact, Arial Black, sans-serif',
+      fontSize: '15px',
       color: '#cccccc',
+      letterSpacing: 1,
     }).setOrigin(0, 0.5);
     this.overlay.add(muteLabel);
 
     let isMuted = this.game.audioManager ? this.game.audioManager.isMuted() : false;
-    const muteBox = this.add.rectangle(width / 2, height / 2 + 20, 28, 28, isMuted ? 0xff4400 : 0x333333);
-    muteBox.setStrokeStyle(2, 0x666666);
-    muteBox.setInteractive({ useHandCursor: true });
-    this.overlay.add(muteBox);
+    const toggleBtn = this.add.rectangle(panelX - 90 + 55, rowY2, 110, 30, isMuted ? 0xcc2222 : 0x223350);
+    toggleBtn.setStrokeStyle(2, isMuted ? 0xff4444 : 0x446699);
+    toggleBtn.setInteractive({ useHandCursor: true });
+    this.overlay.add(toggleBtn);
 
-    const muteCheck = this.add.text(width / 2, height / 2 + 20, isMuted ? '✓' : '', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '18px',
-      color: '#ffffff',
+    const toggleText = this.add.text(panelX - 90 + 55, rowY2, isMuted ? 'MUTED' : 'ACTIVE', {
+      fontFamily: 'Impact, Arial Black, sans-serif',
+      fontSize: '14px',
+      color: isMuted ? '#ffffff' : '#44ffaa',
+      letterSpacing: 1,
     }).setOrigin(0.5);
-    this.overlay.add(muteCheck);
+    this.overlay.add(toggleText);
 
-    muteBox.on('pointerdown', () => {
+    toggleBtn.on('pointerdown', () => {
       isMuted = !isMuted;
-      muteBox.fillColor = isMuted ? 0xff4400 : 0x333333;
-      muteCheck.setText(isMuted ? '✓' : '');
+      toggleBtn.fillColor = isMuted ? 0xcc2222 : 0x223350;
+      toggleBtn.setStrokeStyle(2, isMuted ? 0xff4444 : 0x446699);
+      toggleText.setText(isMuted ? 'MUTED' : 'ACTIVE');
+      toggleText.setColor(isMuted ? '#ffffff' : '#44ffaa');
       if (this.game.audioManager) {
         this.game.audioManager.setMuted(isMuted);
       }
     });
 
+    toggleBtn.on('pointerover', () => {
+      toggleBtn.setScale(1.05);
+    });
+    toggleBtn.on('pointerout', () => {
+      toggleBtn.setScale(1.0);
+    });
+
     // Close button
-    const closeBtn = this.createOverlayButton(width / 2, height / 2 + 90, 'CLOSE', () => {
+    const closeBtn = this.createOverlayButton(panelX, panelY + 92, 'CLOSE', () => {
       this.overlay.destroy();
       this.overlay = null;
     });

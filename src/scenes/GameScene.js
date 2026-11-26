@@ -205,16 +205,18 @@ export default class GameScene extends Phaser.Scene {
   }
   
   updateHeadlights() {
+    if (!this.player || !this.player.active) return;
     const x = this.player.x;
     const y = this.player.y - 40;
-    // Left beam
+    this.headlights.setPosition(x, y - 40);
+    // Left headlight beam forward
     this.headlightBeamL.clear();
-    this.headlightBeamL.fillStyle(0xffffcc, 0.06);
-    this.headlightBeamL.fillTriangle(x - 20, y, x - 35, y + 80, x - 5, y + 80);
-    // Right beam
+    this.headlightBeamL.fillStyle(0xffffcc, 0.08);
+    this.headlightBeamL.fillTriangle(x - 18, y, x - 45, y - 110, x - 6, y - 110);
+    // Right headlight beam forward
     this.headlightBeamR.clear();
-    this.headlightBeamR.fillStyle(0xffffcc, 0.06);
-    this.headlightBeamR.fillTriangle(x + 20, y, x + 5, y + 80, x + 35, y + 80);
+    this.headlightBeamR.fillStyle(0xffffcc, 0.08);
+    this.headlightBeamR.fillTriangle(x + 18, y, x + 6, y - 110, x + 45, y - 110);
   }
 
   createHud() {
@@ -784,10 +786,19 @@ export default class GameScene extends Phaser.Scene {
 
     this.trailer.x = Phaser.Math.Linear(this.trailer.x, this.player.x, 0.18);
     this.trailer.y = this.player.y + 58;
+
+    // Realistic vehicle steering lean & trailer articulation
+    const turnVel = this.player.body ? this.player.body.velocity.x : 0;
+    const cabTilt = Phaser.Math.Clamp(turnVel * 0.035, -8, 8);
+    this.player.setAngle(-90 + cabTilt);
+
+    const trailerDx = this.player.x - this.trailer.x;
+    const trailerArtic = Phaser.Math.Clamp(trailerDx * 0.75, -18, 18);
+    this.trailer.setAngle(-90 + trailerArtic);
+
     this.exhaust.setPosition(this.trailer.x, this.trailer.y + 22);
     this.exhaust2.setPosition(this.trailer.x, this.trailer.y + 26);
     this.flames.setPosition(this.trailer.x, this.trailer.y + 18);
-    this.headlights.setPosition(this.player.x, this.player.y - 36);
     this.updateHeadlights();
 
     this.distance += this.speed * dt * 0.08;
