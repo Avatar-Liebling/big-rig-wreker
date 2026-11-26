@@ -484,6 +484,10 @@ export default class GameScene extends Phaser.Scene {
     this.bossHealth = this.bossMaxHealth;
     this.bossSpawnedAt = this.time.now;
     
+    // Number of ram attempts before boss leaves (increases with level)
+    this.bossMaxAttacks = 2 + Math.floor(this.level / 3); // 2 at level 1, 3 at level 3, 4 at level 6, etc.
+    this.bossAttackCount = 0;
+    
     const lane = LANES[2]; // Center lane
     this.boss = this.physics.add.sprite(lane, -100, 'boss_truck');
     this.boss.setDisplaySize(140, 70);
@@ -495,6 +499,8 @@ export default class GameScene extends Phaser.Scene {
     this.boss.phase = 1;
     this.boss.attackTimer = 0;
     this.boss.side = 1; // 1 = right, -1 = left
+    this.boss.attacking = false;
+    this.boss.attackCooldown = 0;
     
     // Boss health bar
     this.bossBarBg = this.add.rectangle(W / 2, 70, 400, 16, 0x330000).setDepth(50).setScrollFactor(0);
@@ -502,6 +508,12 @@ export default class GameScene extends Phaser.Scene {
     this.bossBarLabel = this.add.text(W / 2, 70, 'BOSS', {
       fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '16px', color: '#ffcc00',
       stroke: '#000', strokeThickness: 3
+    }).setOrigin(0.5).setDepth(52).setScrollFactor(0);
+    
+    // Attack counter display
+    this.bossAttackText = this.add.text(W / 2, 90, `ATTACKS: 0 / ${this.bossMaxAttacks}`, {
+      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '14px', color: '#ffcc00',
+      stroke: '#000', strokeThickness: 2
     }).setOrigin(0.5).setDepth(52).setScrollFactor(0);
     
     this.flashBanner('BOSS INCOMING!');
@@ -514,6 +526,7 @@ export default class GameScene extends Phaser.Scene {
     
     // Movement pattern
     this.boss.attackTimer += dt;
+    if (this.boss.attackCooldown > 0) this.boss.attackCooldown -= dt;
     
     // Check if player has passed the boss vertically (player is above boss)
     const playerPassedBoss = this.player.y < this.boss.y - 30;
@@ -533,8 +546,9 @@ export default class GameScene extends Phaser.Scene {
       this.boss.x = Phaser.Math.Linear(this.boss.x, this.player.x, 0.03);
       
       // More aggressive ramming during chase
-      if (this.boss.attackTimer > 1) {
+      if (this.boss.attackTimer > 1 && this.boss.attackCooldown <= 0) {
         this.boss.attackTimer = 0;
+        this.boss.attackCooldown = 1.5;
         this.tweens.add({
           targets: this.boss,
           x: this.player.x,
@@ -559,16 +573,24 @@ export default class GameScene extends Phaser.Scene {
           this.boss.side *= -1;
         }
         
-        // Ram attack
-        if (this.boss.attackTimer > 2) {
+        // Ram attack - more frequent at higher levels
+        const attackInterval = Phaser.Math.Max(1.5, 3 - this.level * 0.2);
+        if (this.boss.attackTimer > attackInterval && this.boss.attackCooldown <= 0) {
           this.boss.attackTimer = 0;
+          this.boss.attackCooldown = 2;
+          this.boss.attacking = true;
           const targetX = this.player.x;
           this.tweens.add({
             targets: this.boss,
             x: targetX,
-            duration: 800,
+            duration: 600,
             ease: 'Power2',
-            onComplete: () => { this.boss.side = targetX < this.boss.x ? -1 : 1; }
+            onComplete: () => { 
+              this.boss.side = targetX < this.boss.x ? -1 : 1; 
+              this.boss.attacking = false;
+              this.bossAttackCount++;
+              this.bossAttackText.setText(`ATTACKS: ${this.bossAttackCount} / ${this.bossMaxAttacks}`);
+            }
           });
         }
         
@@ -617,9 +639,19 @@ export default class GameScene extends Phaser.Scene {
     this.bossBarFill.width = 396 * ratio;
     this.bossBarFill.fillColor = ratio > 0.5 ? 0xff2200 : (ratio > 0.2 ? 0xffaa00 : 0xff0000);
     
-    // Check collision with player
-    if (Phaser.Math.Distance.Between(this.boss.x, this.boss.y, this.player.x, this.player.y) < 50) {
-      if (this.shieldTime <= 0) {
+    // Check collision with player - player can damage boss by ramming at high speed
+    const dist = Phaser.Math.Distance.Between(this.boss.x, this.boss.y, this.player.x, this.player.y);
+    if (dist < 60) {
+      if (this.speed > 350 || this.nitroActive > 0) {
+        // Player rams boss at high speed - damage boss
+        this.damageBoss(25);
+        this.floatText(this.boss.x, this.boss.y - 30, '-25', '#ff4444');
+        this.burst(this.boss.x, this.boss.y, 'spark_particle', 12);
+        this.cameras.main.shake(100, 0.008);
+        // Knockback
+        this.boss.x += (this.boss.x - this.player.x) * 0.3;
+      } else if (this.shieldTime <= 0) {
+        // Boss damages player
         this.damage(25);
       }
       this.boss.x += Phaser.Math.Between(-40, 40);
@@ -627,13 +659,29 @@ export default class GameScene extends Phaser.Scene {
     
     // Check if boss left screen (but not during chase mode)
     if (!this.bossChaseMode && this.boss.y > H + 100) {
-      this.boss.destroy();
-      this.bossBarBg.destroy();
-      this.bossBarFill.destroy();
-      this.bossBarLabel.destroy();
-      this.boss = null;
-      this.bossActive = false;
+      this.cleanupBoss();
     }
+    
+    // Boss leaves after max attacks
+    if (this.bossAttackCount >= this.bossMaxAttacks && this.boss.y > 100) {
+      this.flashBanner('BOSS RETREATING!');
+      this.boss.vy = 200; // Speed away
+      this.boss.y += this.boss.vy * dt;
+      if (this.boss.y > H + 100) {
+        this.cleanupBoss();
+      }
+    }
+  }
+  
+  cleanupBoss() {
+    if (this.boss) this.boss.destroy();
+    if (this.bossBarBg) this.bossBarBg.destroy();
+    if (this.bossBarFill) this.bossBarFill.destroy();
+    if (this.bossBarLabel) this.bossBarLabel.destroy();
+    if (this.bossAttackText) this.bossAttackText.destroy();
+    this.boss = null;
+    this.bossActive = false;
+    this.bossChaseMode = false;
   }
 
   damageBoss(amount) {
