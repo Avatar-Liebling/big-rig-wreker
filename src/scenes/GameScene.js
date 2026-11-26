@@ -166,6 +166,10 @@ export default class GameScene extends Phaser.Scene {
     this.trailer.setDisplaySize(78, 40);
     this.trailer.setAngle(-90);
     this.trailer.setDepth(9);
+    
+    // Collision bounds for player + trailer (used for precise collision)
+    this.playerBounds = { width: 70, height: 34 };
+    this.trailerBounds = { width: 62, height: 32 };
 
     // Enhanced exhaust with multiple layers
     this.exhaust = this.add.particles(0, 0, 'smoke_particle', {
@@ -960,6 +964,12 @@ export default class GameScene extends Phaser.Scene {
     this.player.setDisplaySize(...checkpoint.size);
     this.player.body.setSize(checkpoint.size[0] * 0.76, checkpoint.size[1] * 0.74);
     
+    // Update collision bounds for player + trailer
+    this.playerBounds = { 
+      width: checkpoint.size[0] * 0.76, 
+      height: checkpoint.size[1] * 0.74 
+    };
+    
     // Update trailer
     this.trailer.setTexture(checkpoint.trailer);
     const trailerSizes = {
@@ -970,6 +980,12 @@ export default class GameScene extends Phaser.Scene {
     };
     const [tw, th] = trailerSizes[checkpoint.trailer] || [78, 40];
     this.trailer.setDisplaySize(tw, th);
+    
+    // Update trailer collision bounds
+    this.trailerBounds = { 
+      width: tw * 0.8, 
+      height: th * 0.8 
+    };
     
     // Update exhaust position based on new trailer size
     this.exhaust.setPosition(this.trailer.x, this.trailer.y + th * 0.35);
@@ -1116,18 +1132,21 @@ export default class GameScene extends Phaser.Scene {
       e.y += dy - (e.vy || 0) * dt;
       if (e.kind === 'power') e.y += Math.sin(this.time.now / 200 + e.x) * 0.2;
 
-      // Boss collision (player projectiles not implemented, so ram damage)
-      if (e.kind === 'boss' && !e.wrecked) {
-        if (Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y) < 55) {
+      // AABB collision detection - full vehicle/trailer bounds
+      if (!e.wrecked && this.checkCollision(e)) {
+        if (e.kind === 'boss') {
           if (this.speed > 350 || this.nitroActive > 0) {
-            this.damageBoss(15);
-            this.floatText(e.x, e.y - 20, '-15', '#ff4444');
+            this.damageBoss(25);
+            this.floatText(e.x, e.y - 30, '-25', '#ff4444');
+            this.burst(e.x, e.y, 'spark_particle', 12);
+            this.cameras.main.shake(100, 0.008);
           } else if (this.shieldTime <= 0) {
-            this.damage(20);
+            this.damage(25);
           }
+          this.boss.x += Phaser.Math.Between(-40, 40);
+        } else {
+          this.resolveHit(e);
         }
-      } else if (!e.wrecked && Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y) < this.hitRadius(e)) {
-        this.resolveHit(e);
       }
       if (e.y > H + 80) {
         e.destroy();
@@ -1144,6 +1163,41 @@ export default class GameScene extends Phaser.Scene {
     if (e.kind === 'power') return 28;
     if (e.kind === 'soft') return 22;
     return 34;
+  }
+
+  // AABB collision detection for player + trailer vs entities
+  checkCollision(entity) {
+    // Player bounds (centered on player)
+    const pW = this.playerBounds.width;
+    const pH = this.playerBounds.height;
+    const pLeft = this.player.x - pW / 2;
+    const pRight = this.player.x + pW / 2;
+    const pTop = this.player.y - pH / 2;
+    const pBottom = this.player.y + pH / 2;
+
+    // Trailer bounds (centered on trailer)
+    const tW = this.trailerBounds.width;
+    const tH = this.trailerBounds.height;
+    const tLeft = this.trailer.x - tW / 2;
+    const tRight = this.trailer.x + tW / 2;
+    const tTop = this.trailer.y - tH / 2;
+    const tBottom = this.trailer.y + tH / 2;
+
+    // Entity bounds - use display size for accuracy
+    const eW = entity.displayWidth * 0.8;
+    const eH = entity.displayHeight * 0.8;
+    const eLeft = entity.x - eW / 2;
+    const eRight = entity.x + eW / 2;
+    const eTop = entity.y - eH / 2;
+    const eBottom = entity.y + eH / 2;
+
+    // Check player collision
+    const playerHit = !(pRight < eLeft || pLeft > eRight || pBottom < eTop || pTop > eBottom);
+    
+    // Check trailer collision
+    const trailerHit = !(tRight < eLeft || tLeft > eRight || tBottom < eTop || tTop > eBottom);
+
+    return playerHit || trailerHit;
   }
 
   resolveHit(e) {
