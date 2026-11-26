@@ -1048,45 +1048,74 @@ export default class GameScene extends Phaser.Scene {
   }
 
   collect(e) {
-    const map = {
-      fuel: () => { this.health = Math.min(100, this.health + 25); this.floatText(e.x, e.y, '+25 HP', '#66ff88'); },
-      wrench: () => { this.health = 100; this.floatText(e.x, e.y, 'REPAIRED', '#66ff88'); },
-      shield: () => { this.shieldTime = 5; this.floatText(e.x, e.y, 'SHIELD', '#66ccff'); },
-      nitro: () => { this.nitroCharge = 1; this.floatText(e.x, e.y, 'NITRO', '#ff8800'); },
-      coin: () => { 
-        this.score += 50; 
-        this.floatText(e.x, e.y, '+50', '#ffdd00'); 
-        this.dailyProgress.coins += 1;
-        // Animated coin sprite
-        const coinAnim = this.add.sprite(e.x, e.y, 'coin_0').setDepth(30).setScale(1.5);
-        this.tweens.add({
-          targets: coinAnim,
-          angle: 720,
-          scale: 0,
-          alpha: 0,
-          duration: 600,
-          ease: 'Back.out',
-          onUpdate: () => {
-            const frame = Math.floor((coinAnim.angle / 720) * 8) % 8;
-            coinAnim.setTexture(`coin_${frame}`);
-          },
-          onComplete: () => coinAnim.destroy(),
-        });
-      },
-      drone: () => {
-        // Drone drops random powerup
-        const drops = ['fuel', 'shield', 'nitro', 'wrench', 'coin'];
-        const drop = Phaser.Math.RND.pick(drops);
-        this.collect({ power: drop, x: e.x, y: e.y });
-      },
+    if (!e || e.collected) return;
+    e.collected = true;
+    const power = e.power;
+    const x = e.x || (this.player ? this.player.x : W / 2);
+    const y = e.y || (this.player ? this.player.y : H / 2);
+
+    const applyPower = (pType) => {
+      const map = {
+        fuel: () => {
+          this.health = Math.min(100, this.health + 25);
+          this.floatText(x, y, '+25 HP', '#66ff88');
+        },
+        wrench: () => {
+          this.health = 100;
+          this.floatText(x, y, 'REPAIRED', '#66ff88');
+        },
+        shield: () => {
+          this.shieldTime = 5;
+          this.floatText(x, y, 'SHIELD', '#66ccff');
+        },
+        nitro: () => {
+          this.nitroCharge = 1;
+          this.floatText(x, y, 'NITRO', '#ff8800');
+        },
+        coin: () => {
+          this.score += 50;
+          this.floatText(x, y, '+50', '#ffdd00');
+          this.dailyProgress.coins += 1;
+          // Animated coin sprite
+          const coinAnim = this.add.sprite(x, y, 'coin_0').setDepth(30).setScale(1.5);
+          this.tweens.add({
+            targets: coinAnim,
+            angle: 720,
+            scale: 0,
+            alpha: 0,
+            duration: 600,
+            ease: 'Back.out',
+            onUpdate: () => {
+              const frame = Math.floor((coinAnim.angle / 720) * 8) % 8;
+              if (this.textures.exists(`coin_${frame}`)) {
+                coinAnim.setTexture(`coin_${frame}`);
+              }
+            },
+            onComplete: () => coinAnim.destroy(),
+          });
+        },
+        drone: () => {
+          // Drone air-carrier drops a random bonus
+          const drops = ['fuel', 'shield', 'nitro', 'wrench', 'coin'];
+          const drop = Phaser.Math.RND.pick(drops);
+          this.burst(x, y, 'spark_particle', 12);
+          applyPower(drop);
+        },
+      };
+
+      map[pType]?.();
+      this.game.audioManager?.play(pType === 'coin' ? 'coin' : 'powerup');
+
+      if (this.analytics) {
+        this.analytics.trackPowerup(pType);
+      }
     };
-    map[e.power]?.();
-    this.game.audioManager?.play(e.power === 'coin' ? 'coin' : 'powerup');
-    
-    if (this.analytics) {
-      this.analytics.trackPowerup(e.power);
+
+    applyPower(power);
+
+    if (typeof e.destroy === 'function') {
+      e.destroy();
     }
-    e.destroy();
   }
 
   damage(amount) {
