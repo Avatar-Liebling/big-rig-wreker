@@ -15,6 +15,11 @@ export default class GameOverScene extends Phaser.Scene {
   }
 
   create() {
+    // Stop the menu scene if it's running
+    if (this.scene.isActive('MenuScene')) {
+      this.scene.stop('MenuScene');
+    }
+    
     const { width, height } = this.cameras.main;
 
     // Play game over sound
