@@ -1040,20 +1040,26 @@ export default class GameScene extends Phaser.Scene {
         e.x = Phaser.Math.Linear(e.x, e.targetLane, 0.05);
       }
       
-      // AI vehicle separation - prevent overlapping
-      if ((e.kind === 'car' || e.kind === 'police') && !e.wrecked) {
+      // AI vehicle separation - prevent overlapping for ALL vehicles
+      if (!e.wrecked && (e.kind === 'car' || e.kind === 'police' || e.kind === 'boss' || e.kind === 'hard' || e.kind === 'container' || e.kind === 'debris')) {
         for (const other of this.entities) {
-          if (other !== e && (other.kind === 'car' || other.kind === 'police') && !other.wrecked) {
+          if (other !== e && !other.wrecked && (other.kind === 'car' || other.kind === 'police' || other.kind === 'boss' || other.kind === 'hard' || other.kind === 'container' || other.kind === 'debris')) {
             const dist = Phaser.Math.Distance.Between(e.x, e.y, other.x, other.y);
-            const minDist = 50; // minimum separation distance
+            const minDist = 60; // minimum separation distance (increased)
             if (dist < minDist && dist > 0) {
-              // Push away from each other
-              const pushX = (e.x - other.x) / dist * (minDist - dist) * 0.5;
+              // Push away from each other - both X and Y
+              const pushX = (e.x - other.x) / dist * (minDist - dist) * 0.4;
+              const pushY = (e.y - other.y) / dist * (minDist - dist) * 0.3;
               e.x += pushX * dt * 60;
+              e.y += pushY * dt * 60;
               other.x -= pushX * dt * 60;
+              other.y -= pushY * dt * 60;
               // Clamp to road bounds
-              e.x = Phaser.Math.Clamp(e.x, ROAD_LEFT + 24, ROAD_RIGHT - 24);
-              other.x = Phaser.Math.Clamp(other.x, ROAD_LEFT + 24, ROAD_RIGHT - 24);
+              e.x = Phaser.Math.Clamp(e.x, ROAD_LEFT + 30, ROAD_RIGHT - 30);
+              other.x = Phaser.Math.Clamp(other.x, ROAD_LEFT + 30, ROAD_RIGHT - 30);
+              // Keep Y within reasonable bounds
+              e.y = Phaser.Math.Clamp(e.y, -100, H + 100);
+              other.y = Phaser.Math.Clamp(other.y, -100, H + 100);
             }
           }
         }
