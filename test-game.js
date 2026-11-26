@@ -14,8 +14,8 @@ import { chromium } from 'playwright';
     errors.push(error.message);
   });
 
-  console.log('Loading http://localhost:5173/...');
-  await page.goto('http://localhost:5173/', { waitUntil: 'networkidle', timeout: 30000 });
+  console.log('Loading https://big-rig-wrecker.onrender.com/...');
+  await page.goto('https://big-rig-wrecker.onrender.com/', { waitUntil: 'networkidle', timeout: 30000 });
   
   // Wait a bit for Phaser to initialize
   await page.waitForTimeout(3000);

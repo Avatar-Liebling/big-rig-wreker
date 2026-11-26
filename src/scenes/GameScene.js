@@ -256,8 +256,9 @@ export default class GameScene extends Phaser.Scene {
     }).setOrigin(1, 0));
     this.speedBar = hud(this.add.rectangle(W - 16, 26, 160, 6, 0x1a1a2a).setOrigin(1, 0.5));
     this.speedBar.setStrokeStyle(1, 0x333355);
-    this.speedFill = hud(this.add.rectangle(W - 176, 26, 1, 6, 0x44ddff).setOrigin(0, 0.5));
-    this.speedFill.setMask(this.add.graphics().fillRect(W - 176, 23, 1, 6));
+    this.speedFill = hud(this.add.rectangle(W - 176, 26, 160, 6, 0x44ddff).setOrigin(0, 0.5));
+    const speedMask = this.add.graphics().fillRect(W - 176, 23, 160, 6);
+    this.speedFill.setMask(speedMask.createGeometryMask());
     
     // Bottom HUD bar
     const botBg = this.add.graphics();
@@ -274,7 +275,8 @@ export default class GameScene extends Phaser.Scene {
     this.hpBar = hud(this.add.rectangle(46, H - 26, 180, 10, 0x1a0a0a).setOrigin(0, 0.5));
     this.hpBar.setStrokeStyle(1, 0x442222);
     this.hpFill = hud(this.add.rectangle(46, H - 26, 180, 10, 0xff3333).setOrigin(0, 0.5));
-    this.hpFill.setMask(this.add.graphics().fillRect(46, H - 31, 180, 10));
+    const hpMask = this.add.graphics().fillRect(46, H - 31, 180, 10);
+    this.hpFill.setMask(hpMask.createGeometryMask());
     this.hpText = hud(this.add.text(236, H - 32, '100', { 
       fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '16px', color: '#fff',
       stroke: '#000000', strokeThickness: 2,
@@ -284,8 +286,9 @@ export default class GameScene extends Phaser.Scene {
     hud(this.add.image(W / 2 - 140, H - 26, 'nitro').setDisplaySize(20, 20));
     this.nitroBar = hud(this.add.rectangle(W / 2 - 114, H - 26, 140, 8, 0x1a1400).setOrigin(0, 0.5));
     this.nitroBar.setStrokeStyle(1, 0x443300);
-    this.nitroFill = hud(this.add.rectangle(W / 2 - 114, H - 26, 0, 8, 0xff8800).setOrigin(0, 0.5));
-    this.nitroFill.setMask(this.add.graphics().fillRect(W / 2 - 114, H - 30, 0, 8));
+    this.nitroFill = hud(this.add.rectangle(W / 2 - 114, H - 26, 140, 8, 0xff8800).setOrigin(0, 0.5));
+    const nitroMask = this.add.graphics().fillRect(W / 2 - 114, H - 30, 140, 8);
+    this.nitroFill.setMask(nitroMask.createGeometryMask());
     
     // Daily challenge (center-right) - better position
     this.dailyContainer = hud(this.add.container(W / 2 + 30, H - 26).setDepth(50));
@@ -1110,11 +1113,13 @@ export default class GameScene extends Phaser.Scene {
     this.speedText.setText(mph + ' MPH');
     const speedRatio = Phaser.Math.Clamp((this.speed - this.minSpeed) / (this.maxSpeed - this.minSpeed), 0, 1);
     this.speedFill.width = 160 * speedRatio;
-    this.speedFill.setMask(this.add.graphics().fillRect(W - 176, 23, 160 * speedRatio, 6));
+    const speedMask = this.add.graphics().fillRect(W - 176, 23, 160 * speedRatio, 6);
+    this.speedFill.setMask(speedMask.createGeometryMask());
     
     const hp = Math.max(0, this.health) / 100;
     this.hpFill.width = 180 * hp;
-    this.hpFill.setMask(this.add.graphics().fillRect(46, H - 31, 180 * hp, 10));
+    const hpMask = this.add.graphics().fillRect(46, H - 31, 180 * hp, 10);
+    this.hpFill.setMask(hpMask.createGeometryMask());
     this.hpFill.fillColor = hp > 0.4 ? 0xff3333 : (hp > 0.2 ? 0xffaa00 : 0xff2200);
     this.hpText.setText(Math.max(0, Math.ceil(this.health)).toString());
     
@@ -1130,7 +1135,8 @@ export default class GameScene extends Phaser.Scene {
     
     const nitroRatio = Phaser.Math.Clamp(this.nitroCharge, 0, 1);
     this.nitroFill.width = 140 * nitroRatio;
-    this.nitroFill.setMask(this.add.graphics().fillRect(W / 2 - 114, H - 30, 140 * nitroRatio, 8));
+    const nitroMask = this.add.graphics().fillRect(W / 2 - 114, H - 30, 140 * nitroRatio, 8);
+    this.nitroFill.setMask(nitroMask.createGeometryMask());
     if (nitroRatio >= 1) {
       this.nitroFill.fillColor = 0xffff00;
     } else {
