@@ -142,7 +142,7 @@ export default class GameOverScene extends Phaser.Scene {
     // Daily challenge status
     let statsY = isNewHighScore ? 255 : 230;
     if (this.dailyComplete) {
-      this.add.text(width / 2, statsY, '📅 DAILY CHALLENGE COMPLETE! +5000', {
+      this.add.text(width / 2, statsY, '★ DAILY CHALLENGE COMPLETE! +5000 ★', {
         fontFamily: 'Impact, Arial Black, sans-serif',
         fontSize: '16px',
         color: '#ffcc00',

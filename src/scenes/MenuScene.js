@@ -211,11 +211,11 @@ export default class MenuScene extends Phaser.Scene {
       'SPACE : Horn / Activate Nitro Boost',
       'ESC : Pause the game',
       '',
-      '🚛 Wreck smaller cars for BIG points!',
-      '💥 Build combos for multiplied scores!',
-      '⚡ Collect power-ups: fuel, shields, nitro',
-      '🚔 Watch out for police at higher scores!',
-      '🏗️ Avoid barriers and obstacles!',
+      '• Wreck smaller cars for BIG points!',
+      '• Build combos for multiplied scores!',
+      '• Collect power-ups: fuel, shields, nitro',
+      '• Watch out for police at higher scores!',
+      '• Avoid barriers and obstacles!',
     ];
 
     const instText = this.add.text(width / 2, height / 2 - 10, instructions.join('\n'), {
@@ -273,27 +273,27 @@ export default class MenuScene extends Phaser.Scene {
     const divLine = this.add.rectangle(panelX, panelY - 70, panelW - 60, 2, 0x2a3350);
     this.overlay.add(divLine);
 
-    // Volume label - positioned with comfortable margins inside panel
+    // Volume label - pure clean typography, no unsupported emojis
     const rowY1 = panelY - 26;
-    const volLabel = this.add.text(panelX - 200, rowY1, '🔊 VOLUME', {
+    const volLabel = this.add.text(panelX - 190, rowY1, 'VOLUME', {
       fontFamily: 'Impact, Arial Black, sans-serif',
-      fontSize: '15px',
+      fontSize: '16px',
       color: '#ffcc00',
       letterSpacing: 1,
     }).setOrigin(0, 0.5);
     this.overlay.add(volLabel);
 
-    // Volume slider track
-    const sliderX = panelX - 90;
+    // Volume slider track - starts at panelX - 70 (330)
+    const sliderX = panelX - 70;
     const sliderY = rowY1;
-    const sliderW = 200;
+    const sliderW = 180;
     const track = this.add.rectangle(sliderX + sliderW / 2, sliderY, sliderW, 14, 0x1c2236);
     track.setStrokeStyle(2, 0x3d4b70);
     track.setInteractive({ useHandCursor: true });
     this.overlay.add(track);
 
     // Track segments for visual ticks
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 9; i++) {
       const seg = this.add.rectangle(sliderX + i * 20 + 10, sliderY, 16, 6, 0x121624);
       seg.setStrokeStyle(1, 0x2a3450);
       this.overlay.add(seg);
@@ -316,7 +316,7 @@ export default class MenuScene extends Phaser.Scene {
     this.overlay.add(handle);
 
     // Percentage text - comfortably inside the right border
-    const volText = this.add.text(sliderX + sliderW + 20, sliderY, Math.round(currentVol * 100) + '%', {
+    const volText = this.add.text(sliderX + sliderW + 18, sliderY, Math.round(currentVol * 100) + '%', {
       fontFamily: 'Impact, Arial Black, sans-serif',
       fontSize: '17px',
       color: '#ffcc00',
@@ -347,23 +347,26 @@ export default class MenuScene extends Phaser.Scene {
       applyVolume(pointer.x);
     });
 
-    // Mute toggle row
+    // Mute toggle row - perfectly aligned with volume row
     const rowY2 = panelY + 34;
-    const muteLabel = this.add.text(panelX - 200, rowY2, '🔇 MUTE AUDIO', {
+    const muteLabel = this.add.text(panelX - 190, rowY2, 'MUTE', {
       fontFamily: 'Impact, Arial Black, sans-serif',
-      fontSize: '15px',
+      fontSize: '16px',
       color: '#cccccc',
       letterSpacing: 1,
     }).setOrigin(0, 0.5);
     this.overlay.add(muteLabel);
 
     let isMuted = this.game.audioManager ? this.game.audioManager.isMuted() : false;
-    const toggleBtn = this.add.rectangle(panelX - 90 + 55, rowY2, 110, 30, isMuted ? 0xcc2222 : 0x223350);
+    const btnW = 120;
+    const btnH = 32;
+    const btnCenterX = sliderX + btnW / 2; // Left-aligned with sliderX (330)
+    const toggleBtn = this.add.rectangle(btnCenterX, rowY2, btnW, btnH, isMuted ? 0xcc2222 : 0x223350);
     toggleBtn.setStrokeStyle(2, isMuted ? 0xff4444 : 0x446699);
     toggleBtn.setInteractive({ useHandCursor: true });
     this.overlay.add(toggleBtn);
 
-    const toggleText = this.add.text(panelX - 90 + 55, rowY2, isMuted ? 'MUTED' : 'ACTIVE', {
+    const toggleText = this.add.text(btnCenterX, rowY2, isMuted ? 'MUTED' : 'UNMUTED', {
       fontFamily: 'Impact, Arial Black, sans-serif',
       fontSize: '14px',
       color: isMuted ? '#ffffff' : '#44ffaa',
@@ -375,7 +378,7 @@ export default class MenuScene extends Phaser.Scene {
       isMuted = !isMuted;
       toggleBtn.fillColor = isMuted ? 0xcc2222 : 0x223350;
       toggleBtn.setStrokeStyle(2, isMuted ? 0xff4444 : 0x446699);
-      toggleText.setText(isMuted ? 'MUTED' : 'ACTIVE');
+      toggleText.setText(isMuted ? 'MUTED' : 'UNMUTED');
       toggleText.setColor(isMuted ? '#ffffff' : '#44ffaa');
       if (this.game.audioManager) {
         this.game.audioManager.setMuted(isMuted);
