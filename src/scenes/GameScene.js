@@ -7,6 +7,14 @@ const ROAD_RIGHT = 600;
 const ROAD_W = ROAD_RIGHT - ROAD_LEFT;
 const LANES = [250, 333, 417, 500, 550];
 
+// Checkpoint system - vehicle upgrade milestones
+const CHECKPOINTS = [
+  { distance: 5000, vehicle: 'truck', label: 'SEMI TRUCK', size: [92, 46], trailer: 'trailer' },
+  { distance: 15000, vehicle: 'big_rig', label: 'BIG RIG', size: [110, 55], trailer: 'trailer_large' },
+  { distance: 30000, vehicle: 'road_train', label: 'ROAD TRAIN', size: [130, 65], trailer: 'trailer_roadtrain' },
+  { distance: 50000, vehicle: 'juggernaut', label: 'JUGGERNAUT', size: [150, 75], trailer: 'trailer_massive' },
+];
+
 // Daily challenge seed (based on date)
 function getDailySeed() {
   const d = new Date();
@@ -62,6 +70,16 @@ export default class GameScene extends Phaser.Scene {
     
     // New: new vehicle types
     this.carTypes = ['car_red', 'car_blue', 'car_green', 'car_yellow', 'car_white', 'motorcycle', 'pickup', 'bus', 'sports_low', 'ambulance', 'firetruck', 'tanker'];
+    
+    // Vehicle upgrade system - checkpoint-based
+    this.currentVehicleTier = 0;
+    this.checkpoints = CHECKPOINTS;
+    this.nextCheckpoint = this.checkpoints[this.currentVehicleTier];
+    this.vehicleUpgradePending = false;
+    
+    // Boss chase behavior
+    this.bossChaseMode = false;
+    this.bossChaseTimer = 0;
     
     // Analytics reference
     this.analytics = this.game.analytics;
@@ -497,67 +515,101 @@ export default class GameScene extends Phaser.Scene {
     // Movement pattern
     this.boss.attackTimer += dt;
     
-    // Phase 1: Slow approach, ram attempts
-    if (this.boss.phase === 1) {
-      this.boss.y += this.boss.vy * dt;
-      if (this.boss.y > 150) this.boss.vy = 20;
+    // Check if player has passed the boss vertically (player is above boss)
+    const playerPassedBoss = this.player.y < this.boss.y - 30;
+    
+    // Boss chase mode - if player passes boss, boss chases for a bit
+    if (playerPassedBoss && !this.bossChaseMode) {
+      this.bossChaseMode = true;
+      this.bossChaseTimer = 5; // Chase for 5 seconds
+      this.flashBanner('BOSS PURSUING!');
+      this.game.audioManager?.play('siren');
+    }
+    
+    if (this.bossChaseMode) {
+      this.bossChaseTimer -= dt;
+      // Chase player vertically and horizontally
+      this.boss.y = Phaser.Math.Linear(this.boss.y, this.player.y - 80, 0.02);
+      this.boss.x = Phaser.Math.Linear(this.boss.x, this.player.x, 0.03);
       
-      // Side-to-side sweeping
-      this.boss.x += this.boss.side * 80 * dt;
-      if (this.boss.x > ROAD_RIGHT - 40 || this.boss.x < ROAD_LEFT + 40) {
-        this.boss.side *= -1;
-      }
-      
-      // Ram attack
-      if (this.boss.attackTimer > 2) {
+      // More aggressive ramming during chase
+      if (this.boss.attackTimer > 1) {
         this.boss.attackTimer = 0;
-        const targetX = this.player.x;
         this.tweens.add({
           targets: this.boss,
-          x: targetX,
-          duration: 800,
+          x: this.player.x,
+          duration: 500,
           ease: 'Power2',
-          onComplete: () => { this.boss.side = targetX < this.boss.x ? -1 : 1; }
         });
       }
       
-      if (this.bossHealth < this.bossMaxHealth * 0.6) {
-        this.boss.phase = 2;
-        this.flashBanner('BOSS ENRAGED!');
-        this.game.audioManager?.play('wreck');
+      if (this.bossChaseTimer <= 0) {
+        this.bossChaseMode = false;
       }
-    }
-    // Phase 2: Faster, spawns minions
-    else if (this.boss.phase === 2) {
-      this.boss.y += this.boss.vy * dt;
-      this.boss.x += this.boss.side * 140 * dt;
-      if (this.boss.x > ROAD_RIGHT - 40 || this.boss.x < ROAD_LEFT + 40) this.boss.side *= -1;
-      
-      if (this.boss.attackTimer > 1.5) {
-        this.boss.attackTimer = 0;
-        // Spawn explosive barrels from sides
-        const side = Phaser.Math.Between(0, 1) ? ROAD_LEFT + 30 : ROAD_RIGHT - 30;
-        const barrel = this.physics.add.sprite(side, this.boss.y, 'barrel');
-        barrel.setDisplaySize(22, 22);
-        barrel.setDepth(5);
-        barrel.kind = 'hard';
-        barrel.vy = 0;
-        barrel.wrecked = false;
-        barrel.fromBoss = true;
-        this.entities.push(barrel);
+    } else {
+      // Normal behavior when not chasing
+      // Phase 1: Slow approach, ram attempts
+      if (this.boss.phase === 1) {
+        this.boss.y += this.boss.vy * dt;
+        if (this.boss.y > 150) this.boss.vy = 20;
+        
+        // Side-to-side sweeping
+        this.boss.x += this.boss.side * 80 * dt;
+        if (this.boss.x > ROAD_RIGHT - 40 || this.boss.x < ROAD_LEFT + 40) {
+          this.boss.side *= -1;
+        }
+        
+        // Ram attack
+        if (this.boss.attackTimer > 2) {
+          this.boss.attackTimer = 0;
+          const targetX = this.player.x;
+          this.tweens.add({
+            targets: this.boss,
+            x: targetX,
+            duration: 800,
+            ease: 'Power2',
+            onComplete: () => { this.boss.side = targetX < this.boss.x ? -1 : 1; }
+          });
+        }
+        
+        if (this.bossHealth < this.bossMaxHealth * 0.6) {
+          this.boss.phase = 2;
+          this.flashBanner('BOSS ENRAGED!');
+          this.game.audioManager?.play('wreck');
+        }
       }
-      
-      if (this.bossHealth < this.bossMaxHealth * 0.2) {
-        this.boss.phase = 3;
-        this.flashBanner('FINAL PHASE!');
+      // Phase 2: Faster, spawns minions
+      else if (this.boss.phase === 2) {
+        this.boss.y += this.boss.vy * dt;
+        this.boss.x += this.boss.side * 140 * dt;
+        if (this.boss.x > ROAD_RIGHT - 40 || this.boss.x < ROAD_LEFT + 40) this.boss.side *= -1;
+        
+        if (this.boss.attackTimer > 1.5) {
+          this.boss.attackTimer = 0;
+          // Spawn explosive barrels from sides
+          const side = Phaser.Math.Between(0, 1) ? ROAD_LEFT + 30 : ROAD_RIGHT - 30;
+          const barrel = this.physics.add.sprite(side, this.boss.y, 'barrel');
+          barrel.setDisplaySize(22, 22);
+          barrel.setDepth(5);
+          barrel.kind = 'hard';
+          barrel.vy = 0;
+          barrel.wrecked = false;
+          barrel.fromBoss = true;
+          this.entities.push(barrel);
+        }
+        
+        if (this.bossHealth < this.bossMaxHealth * 0.2) {
+          this.boss.phase = 3;
+          this.flashBanner('FINAL PHASE!');
+        }
       }
-    }
-    // Phase 3: Desperate, charges
-    else {
-      this.boss.vy = 120;
-      this.boss.y += this.boss.vy * dt;
-      // Charge directly at player
-      this.boss.x = Phaser.Math.Linear(this.boss.x, this.player.x, 0.05);
+      // Phase 3: Desperate, charges
+      else {
+        this.boss.vy = 120;
+        this.boss.y += this.boss.vy * dt;
+        // Charge directly at player
+        this.boss.x = Phaser.Math.Linear(this.boss.x, this.player.x, 0.05);
+      }
     }
     
     // Update health bar
@@ -573,8 +625,8 @@ export default class GameScene extends Phaser.Scene {
       this.boss.x += Phaser.Math.Between(-40, 40);
     }
     
-    // Check if boss left screen
-    if (this.boss.y > H + 100) {
+    // Check if boss left screen (but not during chase mode)
+    if (!this.bossChaseMode && this.boss.y > H + 100) {
       this.boss.destroy();
       this.bossBarBg.destroy();
       this.bossBarFill.destroy();
@@ -760,8 +812,16 @@ export default class GameScene extends Phaser.Scene {
     if (right) this.player.x += steer * dt;
     this.player.x = Phaser.Math.Clamp(this.player.x, ROAD_LEFT + 24, ROAD_RIGHT - 24);
 
-    if (up) this.speed = Math.min(this.maxSpeed, this.speed + 180 * dt);
-    else if (down) this.speed = Math.max(this.minSpeed, this.speed - 260 * dt);
+    // Vertical movement - player can now move up and down the screen
+    const verticalSpeed = 200;
+    if (up) this.player.y -= verticalSpeed * dt;
+    if (down) this.player.y += verticalSpeed * dt;
+    // Clamp vertical position - player can go from near top to bottom
+    this.player.y = Phaser.Math.Clamp(this.player.y, 60, H - 40);
+
+    // Speed control (separate from vertical position)
+    if (this.cursors.shift?.isDown) this.speed = Math.min(this.maxSpeed, this.speed + 180 * dt);
+    else if (this.cursors.space?.isDown) this.speed = Math.max(this.minSpeed, this.speed - 260 * dt);
     else this.speed = Phaser.Math.Linear(this.speed, 260, 0.4 * dt);
 
     if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) {
@@ -829,6 +889,77 @@ export default class GameScene extends Phaser.Scene {
     
     // Check daily challenge
     this.checkDailyProgress();
+    
+    // Check vehicle upgrade checkpoints
+    this.checkVehicleUpgrade();
+  }
+  
+  checkVehicleUpgrade() {
+    if (this.vehicleUpgradePending) return;
+    
+    if (this.nextCheckpoint && this.distance >= this.nextCheckpoint.distance) {
+      this.vehicleUpgradePending = true;
+      this.upgradeVehicle();
+    }
+  }
+  
+  upgradeVehicle() {
+    const checkpoint = this.nextCheckpoint;
+    this.currentVehicleTier++;
+    
+    // Update player sprite and size
+    this.player.setTexture(checkpoint.vehicle);
+    this.player.setDisplaySize(...checkpoint.size);
+    this.player.body.setSize(checkpoint.size[0] * 0.76, checkpoint.size[1] * 0.74);
+    
+    // Update trailer
+    this.trailer.setTexture(checkpoint.trailer);
+    const trailerSizes = {
+      'trailer': [78, 40],
+      'trailer_large': [95, 48],
+      'trailer_roadtrain': [115, 55],
+      'trailer_massive': [135, 65],
+    };
+    const [tw, th] = trailerSizes[checkpoint.trailer] || [78, 40];
+    this.trailer.setDisplaySize(tw, th);
+    
+    // Update exhaust position based on new trailer size
+    this.exhaust.setPosition(this.trailer.x, this.trailer.y + th * 0.35);
+    this.exhaust2.setPosition(this.trailer.x, this.trailer.y + th * 0.45);
+    this.flames.setPosition(this.trailer.x, this.trailer.y + th * 0.3);
+    
+    // Update headlights position
+    this.headlights.setPosition(this.player.x, this.player.y - checkpoint.size[1] * 0.8);
+    
+    // Flash upgrade banner
+    this.flashBanner(checkpoint.label + ' UNLOCKED!');
+    this.game.audioManager?.play('level_complete');
+    
+    // Increase max speed and health with each upgrade
+    this.maxSpeed += 40;
+    this.minSpeed += 10;
+    this.health = Math.min(100, this.health + 20);
+    
+    // Set next checkpoint
+    if (this.currentVehicleTier < this.checkpoints.length) {
+      this.nextCheckpoint = this.checkpoints[this.currentVehicleTier];
+      this.time.delayedCall(2000, () => {
+        this.flashBanner('Next: ' + this.nextCheckpoint.label + ' at ' + this.nextCheckpoint.distance.toLocaleString() + 'm');
+      });
+    } else {
+      this.nextCheckpoint = null;
+    }
+    
+    this.vehicleUpgradePending = false;
+    
+    // Analytics
+    if (this.analytics) {
+      this.analytics.trackEvent('vehicle_upgrade', {
+        tier: this.currentVehicleTier,
+        vehicle: checkpoint.vehicle,
+        distance: Math.floor(this.distance)
+      });
+    }
   }
 
   scrollWorld(dt) {
@@ -908,6 +1039,26 @@ export default class GameScene extends Phaser.Scene {
         }
         e.x = Phaser.Math.Linear(e.x, e.targetLane, 0.05);
       }
+      
+      // AI vehicle separation - prevent overlapping
+      if ((e.kind === 'car' || e.kind === 'police') && !e.wrecked) {
+        for (const other of this.entities) {
+          if (other !== e && (other.kind === 'car' || other.kind === 'police') && !other.wrecked) {
+            const dist = Phaser.Math.Distance.Between(e.x, e.y, other.x, other.y);
+            const minDist = 50; // minimum separation distance
+            if (dist < minDist && dist > 0) {
+              // Push away from each other
+              const pushX = (e.x - other.x) / dist * (minDist - dist) * 0.5;
+              e.x += pushX * dt * 60;
+              other.x -= pushX * dt * 60;
+              // Clamp to road bounds
+              e.x = Phaser.Math.Clamp(e.x, ROAD_LEFT + 24, ROAD_RIGHT - 24);
+              other.x = Phaser.Math.Clamp(other.x, ROAD_LEFT + 24, ROAD_RIGHT - 24);
+            }
+          }
+        }
+      }
+      
       e.y += dy - (e.vy || 0) * dt;
       if (e.kind === 'power') e.y += Math.sin(this.time.now / 200 + e.x) * 0.2;
 
