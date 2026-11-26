@@ -259,8 +259,8 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
     this.overlay.add(title);
 
-    // Volume label
-    const volLabel = this.add.text(width / 2 - 160, height / 2 - 40, 'VOLUME', {
+    // Volume label - positioned further left
+    const volLabel = this.add.text(width / 2 - 190, height / 2 - 40, 'VOLUME', {
       fontFamily: 'Impact, Arial Black, sans-serif',
       fontSize: '14px',
       color: '#ffcc00',
@@ -268,8 +268,8 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0, 0.5);
     this.overlay.add(volLabel);
 
-    // Volume slider track - fits within panel, after VOLUME label
-    const sliderX = width / 2 - 80;
+    // Volume slider track - starts after VOLUME label
+    const sliderX = width / 2 - 40;
     const sliderY = height / 2 - 40;
     const sliderW = 200;
     const track = this.add.rectangle(sliderX + sliderW / 2, sliderY, sliderW, 12, 0x2a2a3a);
