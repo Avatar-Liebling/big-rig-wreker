@@ -1146,22 +1146,44 @@ export default class GameScene extends Phaser.Scene {
       }
       return;
     }
+    
+    // Regular cars (non-tanker) are always wreckable for points
+    if (e.kind === 'car' && !e.wrecked) {
+      if (this.shieldTime > 0) {
+        // Shield active - wreck car for points with shield effect
+        this.burst(e.x, e.y, 'spark_particle', 12);
+        this.wreck(e);
+        return;
+      }
+      // No shield - wreck car for points (player takes no damage from cars)
+      this.wreck(e);
+      return;
+    }
+    
+    // Hard obstacles (concrete barriers, containers) - damage unless fast + no shield
     const fast = this.speed > 300 || this.nitroActive > 0;
-    if (e.kind === 'hard' || e.kind === 'container' || !fast) {
+    if (e.kind === 'hard' || e.kind === 'container') {
       if (this.shieldTime > 0) {
         this.burst(e.x, e.y, 'spark_particle', 10);
         e.destroy();
         return;
       }
-      const dmg = e.kind === 'hard' ? 18 : (e.kind === 'container' ? 22 : 12);
-      this.damage(dmg);
-      this.game.audioManager?.play('screech');
-      this.cameras.main.shake(120, 0.004);
-      e.wrecked = true;
-      e.setVelocity(Phaser.Math.Between(-80, 80), 40);
-      this.time.delayedCall(400, () => e.destroy());
+      if (!fast) {
+        const dmg = e.kind === 'hard' ? 18 : 22;
+        this.damage(dmg);
+        this.game.audioManager?.play('screech');
+        this.cameras.main.shake(120, 0.004);
+        e.wrecked = true;
+        e.setVelocity(Phaser.Math.Between(-80, 80), 40);
+        this.time.delayedCall(400, () => e.destroy());
+        return;
+      }
+      // Fast enough to smash through hard obstacles
+      this.wreck(e);
       return;
     }
+    
+    // Default: wreck for points
     this.wreck(e);
   }
 
