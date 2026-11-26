@@ -740,13 +740,13 @@ export default class AssetGenerator {
       g.fillStyle(0x000000, 0.15);
       g.fillEllipse(25, 22, 44, 34);
 
-      // Base dark puddle
-      const grad = g.createLinearGradient(0, 0, 50, 40);
-      grad.addColorStop(0, '#0a0a0a');
-      grad.addColorStop(0.5, '#050505');
-      grad.addColorStop(1, '#0a0a0a');
-      g.fillStyle(grad);
+      // Base dark puddle - simulate gradient with layered ellipses
+      g.fillStyle(0x0a0a0a);
       g.fillEllipse(25, 20, 44, 34);
+      g.fillStyle(0x050505);
+      g.fillEllipse(25, 20, 38, 28);
+      g.fillStyle(0x0a0a0a);
+      g.fillEllipse(25, 20, 32, 22);
 
       // Rainbow iridescence - multiple ellipses
       const colors = [0xff0044, 0xff8800, 0xffff00, 0x00ff88, 0x0088ff, 0x8800ff];
