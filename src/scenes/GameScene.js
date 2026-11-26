@@ -290,8 +290,8 @@ export default class GameScene extends Phaser.Scene {
     const nitroMask = this.add.graphics().fillRect(W / 2 - 114, H - 30, 140, 8);
     this.nitroFill.setMask(nitroMask.createGeometryMask());
     
-    // Daily challenge (center-right) - better position
-    this.dailyContainer = hud(this.add.container(W / 2 + 30, H - 26).setDepth(50));
+    // Daily challenge (right side, above bottom HUD bar) - no overlap with nitro
+    this.dailyContainer = hud(this.add.container(W - 150, H - 60).setDepth(50));
     this.dailyBg = this.add.rectangle(0, 0, 280, 28, 0x0a1424, 0.8);
     this.dailyBg.setStrokeStyle(1, 0x336699);
     this.dailyText = this.add.text(0, 0, '', {
