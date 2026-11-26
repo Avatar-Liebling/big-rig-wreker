@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 
 (async () => {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: false });
   const page = await browser.newPage();
   
   const errors = [];
@@ -9,9 +9,19 @@ import { chromium } from 'playwright';
     if (msg.type() === 'error') {
       errors.push(msg.text());
     }
+    console.log('CONSOLE:', msg.type(), msg.text());
   });
   page.on('pageerror', error => {
     errors.push(error.message);
+    console.log('PAGE ERROR:', error.message);
+  });
+  page.on('requestfailed', request => {
+    console.log('REQUEST FAILED:', request.url(), request.failure()?.errorText);
+  });
+  page.on('response', response => {
+    if (response.status() === 404) {
+      console.log('404 RESPONSE:', response.url(), response.statusText());
+    }
   });
 
   console.log('Loading https://big-rig-wrecker.onrender.com/...');
@@ -20,29 +30,31 @@ import { chromium } from 'playwright';
   // Wait for Phaser to initialize
   await page.waitForTimeout(3000);
   
-  // Click SETTINGS button (3rd button at y=456)
+  console.log('Clicking SETTINGS button (approx 640, 456)...');
   await page.mouse.click(640, 456);
   await page.waitForTimeout(1000);
   
-  // Test volume slider
-  await page.mouse.click(580, 296); // Click on slider area
-  await page.waitForTimeout(500);
+  console.log('Checking if settings overlay exists...');
+  const overlayInfo = await page.evaluate(() => {
+    if (window.__GAME && window.__GAME.scene) {
+      const menuScene = window.__GAME.scene.getScene('MenuScene');
+      if (menuScene) {
+        return {
+          overlayExists: !!menuScene.overlay,
+          overlayChildren: menuScene.overlay ? menuScene.overlay.list.length : 0,
+          overlayVisible: menuScene.overlay ? menuScene.overlay.visible : false
+        };
+      }
+    }
+    return null;
+  });
+  console.log('Overlay info:', JSON.stringify(overlayInfo, null, 2));
   
-  // Test mute toggle
-  await page.mouse.click(580, 350); // Click mute button
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(2000);
   
-  // Close settings
-  await page.mouse.click(640, 420); // Close button
-  await page.waitForTimeout(500);
-  
-  // Check for errors
-  if (errors.length > 0) {
-    console.log('=== CONSOLE ERRORS ===');
-    errors.forEach(e => console.log('ERROR:', e));
-  } else {
-    console.log('=== NO ERRORS IN SETTINGS ===');
-  }
+  console.log('Closing settings with Escape...');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(1000);
   
   await browser.close();
 })();

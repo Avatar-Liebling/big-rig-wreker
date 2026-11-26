@@ -286,7 +286,8 @@ export default class MenuScene extends Phaser.Scene {
     const currentVol = this.game.audioManager ? this.game.audioManager.getVolume() : 0.7;
     const fillBar = this.add.rectangle(sliderX, sliderY, sliderW * currentVol, 12, 0xff5500);
     fillBar.setOrigin(0, 0.5);
-    fillBar.setMask(this.add.graphics().fillRect(sliderX, sliderY - 6, sliderW * currentVol, 12));
+    const fillMask = this.add.graphics().fillRect(sliderX, sliderY - 6, sliderW * currentVol, 12);
+    fillBar.setMask(fillMask.createGeometryMask());
     this.overlay.add(fillBar);
 
     const handle = this.add.circle(sliderX + sliderW * currentVol, sliderY, 16, 0xff7722);
@@ -314,7 +315,8 @@ export default class MenuScene extends Phaser.Scene {
       const vol = (clampedX - sliderX) / sliderW;
       fillBar.width = sliderW * vol;
       // Update mask
-      fillBar.setMask(this.add.graphics().fillRect(sliderX, sliderY - 6, sliderW * vol, 12));
+      fillMask.clear();
+      fillMask.fillRect(sliderX, sliderY - 6, sliderW * vol, 12);
       volText.setText(Math.round(vol * 100) + '%');
       if (this.game.audioManager) {
         this.game.audioManager.setVolume(vol);
