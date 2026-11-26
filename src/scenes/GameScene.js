@@ -7,6 +7,12 @@ const ROAD_RIGHT = 600;
 const ROAD_W = ROAD_RIGHT - ROAD_LEFT;
 const LANES = [250, 333, 417, 500, 550];
 
+// Daily challenge seed (based on date)
+function getDailySeed() {
+  const d = new Date();
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+
 export default class GameScene extends Phaser.Scene {
   constructor() {
     super({ key: 'GameScene' });
@@ -40,6 +46,25 @@ export default class GameScene extends Phaser.Scene {
     this.policeTimer = 18;
     this.scroll = 0;
     this.entities = [];
+    
+    // New: boss battle state
+    this.bossActive = false;
+    this.boss = null;
+    this.bossHealth = 0;
+    this.bossMaxHealth = 0;
+    this.bossSpawnedAt = 0;
+    
+    // New: daily challenge
+    this.dailySeed = getDailySeed();
+    this.dailyCompleted = false;
+    this.dailyGoals = this.generateDailyGoals();
+    this.dailyProgress = { wrecks: 0, distance: 0, combo: 0, coins: 0, perfect: false };
+    
+    // New: new vehicle types
+    this.carTypes = ['car_red', 'car_blue', 'car_green', 'car_yellow', 'car_white', 'motorcycle', 'pickup', 'bus', 'sports_low', 'ambulance', 'firetruck', 'tanker'];
+    
+    // Analytics reference
+    this.analytics = this.game.analytics;
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys({
@@ -56,6 +81,11 @@ export default class GameScene extends Phaser.Scene {
     this.createHud();
     this.createPause();
     this.startCountdown();
+
+    // Notify analytics
+    if (this.analytics) {
+      this.analytics.trackGameStart('normal');
+    }
 
     this.input.keyboard.on('keydown-ESC', () => {
       if (!this.started || this.health <= 0) return;
@@ -168,6 +198,11 @@ export default class GameScene extends Phaser.Scene {
       fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '20px', color: '#ff8844',
     }).setOrigin(1, 0));
 
+    // Daily challenge display
+    this.dailyText = hud(this.add.text(W / 2, 80, '', {
+      fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#88ccff',
+    }).setOrigin(0.5));
+
     this.banner = hud(this.add.text(W / 2, H / 2, '', {
       fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '72px', color: '#ffffff',
       stroke: '#000000', strokeThickness: 8,
@@ -227,20 +262,67 @@ export default class GameScene extends Phaser.Scene {
   }
 
   spawnCar() {
-    const types = ['car_red', 'car_blue', 'car_green', 'car_yellow', 'car_white'];
-    const key = types[Phaser.Math.Between(0, types.length - 1)];
+    const key = Phaser.Math.RND.pick(this.carTypes);
     const lane = Phaser.Math.RND.pick(LANES);
     const car = this.physics.add.sprite(lane, -40, key);
-    car.setDisplaySize(key === 'car_white' ? 58 : 50, key === 'car_yellow' ? 26 : 30);
+    
+    // Size based on vehicle type
+    const sizes = {
+      'car_red': [50, 30], 'car_blue': [50, 30], 'car_green': [50, 30],
+      'car_yellow': [48, 26], 'car_white': [58, 32],
+      'motorcycle': [35, 18], 'pickup': [65, 35], 'bus': [85, 40],
+      'sports_low': [55, 28], 'ambulance': [60, 35], 'firetruck': [70, 40], 'tanker': [110, 55]
+    };
+    const [dw, dh] = sizes[key] || [50, 30];
+    car.setDisplaySize(dw, dh);
     car.setAngle(-90);
     car.setDepth(6);
-    car.body.setSize(40, 24);
+    car.body.setSize(dw * 0.8, dh * 0.8);
+    
+    // Different behaviors by type
     const difficulty = 1 + this.level * 0.12;
     car.kind = 'car';
-    car.vy = Phaser.Math.Between(70, 180) * difficulty;
-    car.lane = lane;
-    car.hp = 1;
+    car.vehicleType = key;
     car.wrecked = false;
+    
+    if (key === 'motorcycle') {
+      car.vy = Phaser.Math.Between(180, 280) * difficulty;
+      car.hp = 1;
+      car.points = 200;
+      car.agile = true; // Weaves between lanes
+      car.targetLane = lane;
+      car.laneChangeTimer = Phaser.Math.Between(1, 3);
+    } else if (key === 'bus') {
+      car.vy = Phaser.Math.Between(50, 100) * difficulty;
+      car.hp = 3;
+      car.points = 300;
+      car.slow = true;
+    } else if (key === 'tanker') {
+      car.vy = Phaser.Math.Between(60, 110) * difficulty;
+      car.hp = 2;
+      car.points = 400;
+      car.explosive = true;
+    } else if (key === 'sports_low') {
+      car.vy = Phaser.Math.Between(200, 300) * difficulty;
+      car.hp = 1;
+      car.points = 350;
+      car.fast = true;
+    } else if (key === 'ambulance' || key === 'firetruck') {
+      car.vy = Phaser.Math.Between(120, 200) * difficulty;
+      car.hp = 2;
+      car.points = 250;
+      car.emergency = true;
+      this.game.audioManager?.play('siren');
+    } else if (key === 'pickup') {
+      car.vy = Phaser.Math.Between(70, 150) * difficulty;
+      car.hp = 1;
+      car.points = 150;
+    } else {
+      car.vy = Phaser.Math.Between(70, 180) * difficulty;
+      car.hp = 1;
+      car.points = 100;
+    }
+    car.lane = lane;
     this.entities.push(car);
   }
 
@@ -254,8 +336,163 @@ export default class GameScene extends Phaser.Scene {
     car.vy = 160 + this.level * 8;
     car.wrecked = false;
     car.hp = 2;
+    car.points = 500;
     this.entities.push(car);
     this.game.audioManager?.play('siren');
+  }
+
+  spawnBoss() {
+    if (this.bossActive) return;
+    this.bossActive = true;
+    this.bossMaxHealth = 300 + this.level * 100;
+    this.bossHealth = this.bossMaxHealth;
+    this.bossSpawnedAt = this.time.now;
+    
+    const lane = LANES[2]; // Center lane
+    this.boss = this.physics.add.sprite(lane, -100, 'boss_truck');
+    this.boss.setDisplaySize(140, 70);
+    this.boss.setAngle(-90);
+    this.boss.setDepth(8);
+    this.boss.kind = 'boss';
+    this.boss.vy = 40;
+    this.boss.wrecked = false;
+    this.boss.phase = 1;
+    this.boss.attackTimer = 0;
+    this.boss.side = 1; // 1 = right, -1 = left
+    
+    // Boss health bar
+    this.bossBarBg = this.add.rectangle(W / 2, 70, 400, 16, 0x330000).setDepth(50).setScrollFactor(0);
+    this.bossBarFill = this.add.rectangle(W / 2 - 198, 70, 396, 12, 0xff2200).setDepth(51).setScrollFactor(0).setOrigin(0, 0.5);
+    this.bossBarLabel = this.add.text(W / 2, 70, 'BOSS', {
+      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '16px', color: '#ffcc00',
+      stroke: '#000', strokeThickness: 3
+    }).setOrigin(0.5).setDepth(52).setScrollFactor(0);
+    
+    this.flashBanner('BOSS INCOMING!');
+    this.game.audioManager?.play('siren');
+    this.entities.push(this.boss);
+  }
+
+  updateBoss(dt) {
+    if (!this.boss || !this.boss.active) return;
+    
+    // Movement pattern
+    this.boss.attackTimer += dt;
+    
+    // Phase 1: Slow approach, ram attempts
+    if (this.boss.phase === 1) {
+      this.boss.y += this.boss.vy * dt;
+      if (this.boss.y > 150) this.boss.vy = 20;
+      
+      // Side-to-side sweeping
+      this.boss.x += this.boss.side * 80 * dt;
+      if (this.boss.x > ROAD_RIGHT - 40 || this.boss.x < ROAD_LEFT + 40) {
+        this.boss.side *= -1;
+      }
+      
+      // Ram attack
+      if (this.boss.attackTimer > 2) {
+        this.boss.attackTimer = 0;
+        const targetX = this.player.x;
+        this.tweens.add({
+          targets: this.boss,
+          x: targetX,
+          duration: 800,
+          ease: 'Power2',
+          onComplete: () => { this.boss.side = targetX < this.boss.x ? -1 : 1; }
+        });
+      }
+      
+      if (this.bossHealth < this.bossMaxHealth * 0.6) {
+        this.boss.phase = 2;
+        this.flashBanner('BOSS ENRAGED!');
+        this.game.audioManager?.play('wreck');
+      }
+    }
+    // Phase 2: Faster, spawns minions
+    else if (this.boss.phase === 2) {
+      this.boss.y += this.boss.vy * dt;
+      this.boss.x += this.boss.side * 140 * dt;
+      if (this.boss.x > ROAD_RIGHT - 40 || this.boss.x < ROAD_LEFT + 40) this.boss.side *= -1;
+      
+      if (this.boss.attackTimer > 1.5) {
+        this.boss.attackTimer = 0;
+        // Spawn explosive barrels from sides
+        const side = Phaser.Math.Between(0, 1) ? ROAD_LEFT + 30 : ROAD_RIGHT - 30;
+        const barrel = this.physics.add.sprite(side, this.boss.y, 'barrel');
+        barrel.setDisplaySize(22, 22);
+        barrel.setDepth(5);
+        barrel.kind = 'hard';
+        barrel.vy = 0;
+        barrel.wrecked = false;
+        barrel.fromBoss = true;
+        this.entities.push(barrel);
+      }
+      
+      if (this.bossHealth < this.bossMaxHealth * 0.2) {
+        this.boss.phase = 3;
+        this.flashBanner('FINAL PHASE!');
+      }
+    }
+    // Phase 3: Desperate, charges
+    else {
+      this.boss.vy = 120;
+      this.boss.y += this.boss.vy * dt;
+      // Charge directly at player
+      this.boss.x = Phaser.Math.Linear(this.boss.x, this.player.x, 0.05);
+    }
+    
+    // Update health bar
+    const ratio = this.bossHealth / this.bossMaxHealth;
+    this.bossBarFill.width = 396 * ratio;
+    this.bossBarFill.fillColor = ratio > 0.5 ? 0xff2200 : (ratio > 0.2 ? 0xffaa00 : 0xff0000);
+    
+    // Check collision with player
+    if (Phaser.Math.Distance.Between(this.boss.x, this.boss.y, this.player.x, this.player.y) < 50) {
+      if (this.shieldTime <= 0) {
+        this.damage(25);
+      }
+      this.boss.x += Phaser.Math.Between(-40, 40);
+    }
+    
+    // Check if boss left screen
+    if (this.boss.y > H + 100) {
+      this.boss.destroy();
+      this.bossBarBg.destroy();
+      this.bossBarFill.destroy();
+      this.bossBarLabel.destroy();
+      this.boss = null;
+      this.bossActive = false;
+    }
+  }
+
+  damageBoss(amount) {
+    this.bossHealth -= amount;
+    this.burst(this.boss.x, this.boss.y, 'spark_particle', 8);
+    this.cameras.main.shake(80, 0.006);
+    
+    if (this.bossHealth <= 0) {
+      this.defeatBoss();
+    }
+  }
+
+  defeatBoss() {
+    const bonus = 5000 * this.combo;
+    this.score += bonus;
+    this.flashBanner('BOSS DEFEATED! +' + bonus.toLocaleString());
+    this.game.audioManager?.play('level_complete');
+    
+    // Massive explosion
+    this.burst(this.boss.x, this.boss.y, 'explosion_particle', 30);
+    this.burst(this.boss.x, this.boss.y, 'spark_particle', 20);
+    
+    this.boss.destroy();
+    if (this.bossBarBg) this.bossBarBg.destroy();
+    if (this.bossBarFill) this.bossBarFill.destroy();
+    if (this.bossBarLabel) this.bossBarLabel.destroy();
+    this.boss = null;
+    this.bossActive = false;
+    this.combo = 1;
   }
 
   spawnObstacle() {
@@ -285,11 +522,12 @@ export default class GameScene extends Phaser.Scene {
       { key: 'nitro', type: 'nitro' },
       { key: 'wrench', type: 'wrench' },
       { key: 'coin', type: 'coin' },
+      { key: 'drone', type: 'drone' }, // New: drone drops random powerup
     ];
     const pick = Phaser.Math.RND.pick(kinds);
     const x = Phaser.Math.RND.pick(LANES);
     const p = this.physics.add.sprite(x, -30, pick.key);
-    p.setDisplaySize(26, 26);
+    p.setDisplaySize(pick.key === 'drone' ? 20 : 26, pick.key === 'drone' ? 20 : 26);
     p.setDepth(6);
     p.kind = 'power';
     p.power = pick.type;
@@ -297,6 +535,63 @@ export default class GameScene extends Phaser.Scene {
     p.vy = 0;
     this.entities.push(p);
     this.tweens.add({ targets: p, scaleX: p.scaleX * 1.15, scaleY: p.scaleY * 1.15, yoyo: true, repeat: -1, duration: 400 });
+  }
+
+  generateDailyGoals() {
+    // Deterministic daily goals based on seed
+    const rng = (seed) => {
+      let s = seed;
+      return () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+    };
+    const r = rng(this.dailySeed);
+    
+    const goalTypes = [
+      { type: 'wrecks', target: 10 + Math.floor(r() * 20), desc: 'Wreck {target} vehicles' },
+      { type: 'distance', target: 5000 + Math.floor(r() * 10000), desc: 'Drive {target}m' },
+      { type: 'combo', target: 3 + Math.floor(r() * 3), desc: 'Reach x{target} combo' },
+      { type: 'coins', target: 3 + Math.floor(r() * 5), desc: 'Collect {target} coins' },
+      { type: 'perfect', target: 1, desc: 'Complete without damage' },
+    ];
+    
+    // Pick 3 goals for today
+    const shuffled = [...goalTypes].sort(() => r() - 0.5);
+    return shuffled.slice(0, 3);
+  }
+
+  checkDailyProgress() {
+    if (this.dailyCompleted) return;
+    
+    let completed = 0;
+    for (const goal of this.dailyGoals) {
+      let done = false;
+      if (goal.type === 'wrecks' && this.dailyProgress.wrecks >= goal.target) done = true;
+      if (goal.type === 'distance' && this.dailyProgress.distance >= goal.target) done = true;
+      if (goal.type === 'combo' && this.dailyProgress.combo >= goal.target) done = true;
+      if (goal.type === 'coins' && this.dailyProgress.coins >= goal.target) done = true;
+      if (goal.type === 'perfect' && this.health === 100 && this.distance > 1000) done = true;
+      
+      if (done) completed++;
+    }
+    
+    if (completed === this.dailyGoals.length) {
+      this.dailyCompleted = true;
+      this.flashBanner('DAILY CHALLENGE COMPLETE! +5000');
+      this.score += 5000;
+      this.game.audioManager?.play('level_complete');
+    }
+  }
+
+  getDailyDisplay() {
+    return this.dailyGoals.map(g => {
+      let current = 0;
+      if (g.type === 'wrecks') current = this.dailyProgress.wrecks;
+      if (g.type === 'distance') current = this.dailyProgress.distance;
+      if (g.type === 'combo') current = this.dailyProgress.combo;
+      if (g.type === 'coins') current = this.dailyProgress.coins;
+      if (g.type === 'perfect') current = (this.health === 100 && this.distance > 1000) ? 1 : 0;
+      
+      return `${g.desc.replace('{target}', g.target)}: ${Math.min(current, g.target)}/${g.target}`;
+    }).join('  |  ');
   }
 
   update(_time, delta) {
@@ -360,6 +655,7 @@ export default class GameScene extends Phaser.Scene {
     this.headlights.setPosition(this.player.x, this.player.y - 36);
 
     this.distance += this.speed * dt * 0.08;
+    this.dailyProgress.distance = Math.floor(this.distance);
     this.score += Math.floor(this.speed * dt * 0.4);
     if (this.comboTimer > 0) {
       this.comboTimer -= dt;
@@ -370,7 +666,13 @@ export default class GameScene extends Phaser.Scene {
       this.level = nextLevel;
       this.flashBanner('LEVEL ' + this.level);
       this.game.audioManager?.play('level_complete');
+      if (this.analytics) {
+        this.analytics.trackLevelUp(this.level);
+      }
     }
+    
+    // Check daily challenge
+    this.checkDailyProgress();
   }
 
   scrollWorld(dt) {
@@ -412,6 +714,22 @@ export default class GameScene extends Phaser.Scene {
         this.policeTimer = Math.max(6, 16 - this.level);
       }
     }
+    
+    // Boss spawn every 10 levels
+    if (this.level % 10 === 0 && !this.bossActive && this.score > this.bossSpawnedAt) {
+      if (!this.bossQueued) {
+        this.bossQueued = true;
+        this.time.delayedCall(5000, () => {
+          this.bossQueued = false;
+          this.spawnBoss();
+        });
+      }
+    }
+    
+    // Update boss
+    if (this.bossActive) {
+      this.updateBoss(dt);
+    }
   }
 
   updateEntities(dt) {
@@ -425,10 +743,29 @@ export default class GameScene extends Phaser.Scene {
       if (e.kind === 'police' && !e.wrecked) {
         e.x = Phaser.Math.Linear(e.x, this.player.x, 0.02 + this.level * 0.002);
       }
+      if (e.kind === 'car' && e.agile && !e.wrecked) {
+        // Motorcycle lane weaving
+        e.laneChangeTimer -= dt;
+        if (e.laneChangeTimer <= 0) {
+          e.targetLane = Phaser.Math.RND.pick(LANES);
+          e.laneChangeTimer = Phaser.Math.Between(1, 3);
+        }
+        e.x = Phaser.Math.Linear(e.x, e.targetLane, 0.05);
+      }
       e.y += dy - (e.vy || 0) * dt;
       if (e.kind === 'power') e.y += Math.sin(this.time.now / 200 + e.x) * 0.2;
 
-      if (!e.wrecked && Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y) < this.hitRadius(e)) {
+      // Boss collision (player projectiles not implemented, so ram damage)
+      if (e.kind === 'boss' && !e.wrecked) {
+        if (Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y) < 55) {
+          if (this.speed > 350 || this.nitroActive > 0) {
+            this.damageBoss(15);
+            this.floatText(e.x, e.y - 20, '-15', '#ff4444');
+          } else if (this.shieldTime <= 0) {
+            this.damage(20);
+          }
+        }
+      } else if (!e.wrecked && Phaser.Math.Distance.Between(e.x, e.y, this.player.x, this.player.y) < this.hitRadius(e)) {
         this.resolveHit(e);
       }
       if (e.y > H + 80) {
@@ -459,6 +796,24 @@ export default class GameScene extends Phaser.Scene {
       e.destroy();
       return;
     }
+    if (e.kind === 'car' && e.explosive && !e.wrecked) {
+      // Tanker explodes!
+      e.wrecked = true;
+      this.wreck(e); // Big points
+      this.burst(e.x, e.y, 'explosion_particle', 20);
+      this.burst(e.x, e.y, 'spark_particle', 15);
+      this.cameras.main.shake(200, 0.01);
+      // Damage nearby entities
+      for (const other of this.entities) {
+        if (other !== e && !other.wrecked && Phaser.Math.Distance.Between(other.x, other.y, e.x, e.y) < 80) {
+          if (other.kind === 'car' || other.kind === 'police') {
+            other.wrecked = true;
+            this.wreck(other);
+          }
+        }
+      }
+      return;
+    }
     const fast = this.speed > 300 || this.nitroActive > 0;
     if (e.kind === 'hard' || !fast) {
       if (this.shieldTime > 0) {
@@ -480,9 +835,11 @@ export default class GameScene extends Phaser.Scene {
 
   wreck(e) {
     e.wrecked = true;
-    const points = (e.kind === 'police' ? 500 : 100) * this.combo;
+    const points = (e.points || (e.kind === 'police' ? 500 : 100)) * this.combo;
     this.score += points;
     this.carsWrecked += 1;
+    this.dailyProgress.wrecks += 1;
+    this.dailyProgress.combo = Math.max(this.dailyProgress.combo, this.combo + 1);
     this.combo = Math.min(5, this.combo + 1);
     this.maxCombo = Math.max(this.maxCombo, this.combo);
     this.comboTimer = 3;
@@ -492,6 +849,13 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.shake(180, 0.008);
     this.burst(e.x, e.y, 'explosion_particle', 16);
     this.burst(e.x, e.y, 'spark_particle', 10);
+    
+    // Analytics
+    if (this.analytics) {
+      this.analytics.trackWreck(e.vehicleType || e.kind, points, this.combo);
+      this.analytics.trackScore(this.score);
+    }
+    
     this.tweens.add({
       targets: e,
       angle: e.angle + Phaser.Math.Between(-180, 180),
@@ -508,10 +872,20 @@ export default class GameScene extends Phaser.Scene {
       wrench: () => { this.health = 100; this.floatText(e.x, e.y, 'REPAIRED', '#66ff88'); },
       shield: () => { this.shieldTime = 5; this.floatText(e.x, e.y, 'SHIELD', '#66ccff'); },
       nitro: () => { this.nitroCharge = 1; this.floatText(e.x, e.y, 'NITRO', '#ff8800'); },
-      coin: () => { this.score += 50; this.floatText(e.x, e.y, '+50', '#ffdd00'); },
+      coin: () => { this.score += 50; this.floatText(e.x, e.y, '+50', '#ffdd00'); this.dailyProgress.coins += 1; },
+      drone: () => {
+        // Drone drops random powerup
+        const drops = ['fuel', 'shield', 'nitro', 'wrench', 'coin'];
+        const drop = Phaser.Math.RND.pick(drops);
+        this.collect({ power: drop, x: e.x, y: e.y });
+      },
     };
     map[e.power]?.();
     this.game.audioManager?.play(e.power === 'coin' ? 'coin' : 'powerup');
+    
+    if (this.analytics) {
+      this.analytics.trackPowerup(e.power);
+    }
     e.destroy();
   }
 
@@ -566,6 +940,13 @@ export default class GameScene extends Phaser.Scene {
     this.nitroFill.width = 120 * Phaser.Math.Clamp(this.nitroCharge, 0, 1);
     this.levelText.setText('LEVEL ' + this.level);
     if (this.combo <= 1 && this.comboTimer <= 0) this.comboText.setText('');
+    
+    // Daily challenge
+    if (!this.dailyCompleted) {
+      this.dailyText.setText('📅 DAILY: ' + this.getDailyDisplay());
+    } else {
+      this.dailyText.setText('📅 DAILY COMPLETE! +5000');
+    }
   }
 
   updateWeather(dt) {
@@ -586,6 +967,18 @@ export default class GameScene extends Phaser.Scene {
     this.game.audioManager?.play('explosion');
     this.cameras.main.shake(400, 0.02);
     this.burst(this.player.x, this.player.y, 'explosion_particle', 24);
+    
+    // Analytics
+    if (this.analytics) {
+      this.analytics.trackGameEnd(Math.floor(this.score), {
+        carsWrecked: this.carsWrecked,
+        maxCombo: this.maxCombo,
+        distance: Math.floor(this.distance),
+        level: this.level,
+        dailyComplete: this.dailyCompleted
+      });
+    }
+    
     this.time.delayedCall(700, () => {
       this.scene.start('GameOverScene', {
         score: Math.floor(this.score),
@@ -593,6 +986,7 @@ export default class GameScene extends Phaser.Scene {
         maxCombo: this.maxCombo,
         distance: Math.floor(this.distance),
         level: this.level,
+        dailyComplete: this.dailyCompleted,
       });
     });
   }

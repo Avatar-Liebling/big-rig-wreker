@@ -284,7 +284,7 @@ export default class MenuScene extends Phaser.Scene {
     handle.setInteractive({ draggable: true, useHandCursor: true });
     this.overlay.add(handle);
 
-    const volText = this.add.text(sliderX + sliderW + 30, sliderY, Math.round(currentVol * 100) + '%', {
+    const volText = this.add.text(sliderX + sliderW + 45, sliderY, Math.round(currentVol * 100) + '%', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
       color: '#ffffff',

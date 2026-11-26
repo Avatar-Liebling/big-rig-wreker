@@ -11,6 +11,7 @@ export default class GameOverScene extends Phaser.Scene {
     this.maxCombo = data.maxCombo || 0;
     this.distanceTraveled = data.distance || 0;
     this.levelReached = data.level || 1;
+    this.dailyComplete = data.dailyComplete || false;
   }
 
   create() {
@@ -133,8 +134,20 @@ export default class GameOverScene extends Phaser.Scene {
       color: '#888888',
     }).setOrigin(0.5).setDepth(2);
 
+    // Daily challenge status
+    let statsY = isNewHighScore ? 255 : 230;
+    if (this.dailyComplete) {
+      this.add.text(width / 2, statsY, '📅 DAILY CHALLENGE COMPLETE! +5000', {
+        fontFamily: 'Impact, Arial Black, sans-serif',
+        fontSize: '16px',
+        color: '#ffcc00',
+        stroke: '#000000',
+        strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(2);
+      statsY += 30;
+    }
+    
     // Stats panel
-    const statsY = isNewHighScore ? 255 : 230;
     const panelBg = this.add.rectangle(width / 2, statsY + 40, 380, 100, 0x111122, 0.8);
     panelBg.setStrokeStyle(1, 0x333355);
     panelBg.setDepth(2);
@@ -181,6 +194,20 @@ export default class GameOverScene extends Phaser.Scene {
         this.scene.start('MenuScene');
       });
     });
+    
+    // Share score / Ad break button for Playables
+    if (this.game.playables?.getIsPlayable()) {
+      this.createButton(width / 2, buttonsY + 55, 'SHARE SCORE', () => {
+        if (this.game.playables) {
+          this.game.playables.endGameplay(this.finalScore, {
+            carsWrecked: this.carsWrecked,
+            maxCombo: this.maxCombo,
+            distance: Math.floor(this.distanceTraveled),
+            level: this.levelReached
+          });
+        }
+      });
+    }
   }
 
   createButton(x, y, label, callback) {

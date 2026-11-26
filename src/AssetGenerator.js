@@ -1390,6 +1390,618 @@ export default class AssetGenerator {
       g.fillCircle(2, 2, 0.7);
     });
 
+    // =========================================================================
+    // 35. BOSS TRUCK (140x70) — Armored boss vehicle
+    // =========================================================================
+    makeTexture('boss_truck', 140, 70, (g, w, h) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.35);
+      g.fillRoundedRect(5, 5, w - 5, h - 5, 8);
+
+      // Main body — dark steel
+      g.fillStyle(0x2a2a3a);
+      g.fillRoundedRect(0, 6, w - 8, h - 12, 8);
+
+      // Armor plates
+      g.fillStyle(0x3a3a4a);
+      g.fillRoundedRect(8, 14, w - 24, h - 28, 4);
+      // Plate lines
+      g.lineStyle(2, 0x4a4a5a, 0.8);
+      for (let x = 20; x < w - 20; x += 18) {
+        g.lineBetween(x, 16, x, h - 16);
+      }
+
+      // Red warning lights on top
+      g.fillStyle(0x880000);
+      g.fillCircle(30, 16, 5);
+      g.fillCircle(w - 30, 16, 5);
+      g.fillCircle(30, h - 16, 5);
+      g.fillCircle(w - 30, h - 16, 5);
+      g.fillStyle(0xff2222);
+      g.fillCircle(30, 16, 2.5);
+      g.fillCircle(w - 30, 16, 2.5);
+      g.fillCircle(30, h - 16, 2.5);
+      g.fillCircle(w - 30, h - 16, 2.5);
+
+      // Front plow / ram
+      g.fillStyle(0x1a1a2a);
+      g.fillTriangle(w - 8, 8, w - 8, h - 8, w + 12, h / 2);
+      g.fillStyle(0x444455);
+      g.fillTriangle(w - 12, 14, w - 12, h - 14, w + 6, h / 2);
+
+      // Exhaust stacks (triple)
+      g.fillStyle(0x222222);
+      g.fillRect(40, 4, 8, 6);
+      g.fillRect(40, h - 10, 8, 6);
+      g.fillRect(60, 4, 8, 6);
+      g.fillRect(60, h - 10, 8, 6);
+
+      // Wheels (6 wheels - dual rear)
+      g.fillStyle(0x111111);
+      g.fillRect(20, 0, 18, 8);
+      g.fillRect(20, h - 8, 18, 8);
+      g.fillRect(55, 0, 18, 8);
+      g.fillRect(55, h - 8, 18, 8);
+      g.fillRect(85, 0, 18, 8);
+      g.fillRect(85, h - 8, 18, 8);
+      // Rims
+      g.fillStyle(0x333333);
+      g.fillRect(23, 1, 12, 6);
+      g.fillRect(23, h - 7, 12, 6);
+      g.fillRect(58, 1, 12, 6);
+      g.fillRect(58, h - 7, 12, 6);
+      g.fillRect(88, 1, 12, 6);
+      g.fillRect(88, h - 7, 12, 6);
+
+      // "BOSS" text on side (blocky letters)
+      g.fillStyle(0xff4400);
+      // B
+      g.fillRect(18, 22, 2, 22);
+      g.fillRect(20, 22, 10, 4);
+      g.fillRect(30, 26, 2, 10);
+      g.fillRect(20, 33, 10, 4);
+      g.fillRect(30, 37, 2, 7);
+      g.fillRect(20, 44, 10, 4);
+      // O
+      g.fillRect(34, 22, 12, 4);
+      g.fillRect(34, 44, 12, 4);
+      g.fillRect(34, 22, 4, 22);
+      g.fillRect(42, 22, 4, 22);
+      // S
+      g.fillRect(48, 22, 10, 4);
+      g.fillRect(48, 22, 2, 11);
+      g.fillRect(48, 33, 10, 4);
+      g.fillRect(56, 33, 2, 11);
+      g.fillRect(48, 44, 10, 4);
+      // S
+      g.fillRect(60, 22, 10, 4);
+      g.fillRect(60, 22, 2, 11);
+      g.fillRect(60, 33, 10, 4);
+      g.fillRect(68, 33, 2, 11);
+      g.fillRect(60, 44, 10, 4);
+    });
+
+    // =========================================================================
+    // 36. TANKER TRUCK (110x55) — Explosive hazard
+    // =========================================================================
+    makeTexture('tanker', 110, 55, (g, w, h) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.3);
+      g.fillRoundedRect(3, 3, w - 3, h - 3, 5);
+
+      // Cab (small)
+      g.fillStyle(0x442200);
+      g.fillRoundedRect(70, 8, 38, 39, 4);
+      // Windshield
+      g.fillStyle(0x223355);
+      g.fillRoundedRect(85, 12, 18, 22, 2);
+      // Cab roof
+      g.fillStyle(0x663300);
+      g.fillRect(72, 8, 34, 4);
+
+      // Tanker body — silver cylinder
+      g.fillStyle(0xaaaaaa);
+      g.fillRoundedRect(0, 10, 72, 35, 5);
+      // Tank highlight
+      g.fillStyle(0xcccccc, 0.3);
+      g.fillRect(6, 12, 60, 12);
+      // Hazard stripes on back
+      g.fillStyle(0xff0000);
+      for (let i = 0; i < 4; i++) {
+        g.fillRect(4, 14 + i * 8, 60, 3);
+      }
+      g.fillStyle(0xffff00);
+      for (let i = 0; i < 4; i++) {
+        g.fillRect(4, 17 + i * 8, 60, 3);
+      }
+      // Flammable symbol
+      g.fillStyle(0xff0000);
+      g.fillTriangle(20, 25, 36, 25, 28, 40);
+      g.fillStyle(0x000000);
+      g.fillTriangle(22, 27, 34, 27, 28, 37);
+
+      // Wheels
+      g.fillStyle(0x111111);
+      g.fillRect(10, 2, 16, 6);
+      g.fillRect(10, h - 8, 16, 6);
+      g.fillRect(35, 2, 16, 6);
+      g.fillRect(35, h - 8, 16, 6);
+      g.fillRect(48, 0, 14, 5);
+      g.fillRect(48, h - 5, 14, 5);
+    });
+
+    // =========================================================================
+    // 37. MOTORCYCLE (35x18) — Fast traffic
+    // =========================================================================
+    makeTexture('motorcycle', 35, 18, (g, w, h) => {
+      const colors = [0xcc0000, 0x0000cc, 0x00cc00, 0xffcc00, 0xff00cc];
+      const bodyColor = colors[Math.floor(Math.random() * colors.length)];
+      // Shadow
+      g.fillStyle(0x000000, 0.2);
+      g.fillEllipse(w/2, h/2 + 2, w - 4, h - 4);
+
+      // Body
+      g.fillStyle(bodyColor);
+      g.fillRoundedRect(6, 3, 22, 12, 3);
+      // Seat
+      g.fillStyle(0x111111);
+      g.fillRoundedRect(18, 1, 10, 5, 2);
+      // Engine
+      g.fillStyle(0x333333);
+      g.fillRect(6, 8, 8, 7);
+      // Exhaust
+      g.fillStyle(0x666666);
+      g.fillRect(4, 12, 4, 4);
+
+      // Wheels
+      g.fillStyle(0x000000);
+      g.fillCircle(9, h - 1, 5);
+      g.fillCircle(w - 8, h - 1, 5);
+      g.fillStyle(0x333333);
+      g.fillCircle(9, h - 1, 2);
+      g.fillCircle(w - 8, h - 1, 2);
+
+      // Headlight
+      g.fillStyle(0xffffcc);
+      g.fillCircle(w - 2, 8, 3);
+    });
+
+    // =========================================================================
+    // 38. AMBULANCE (60x35) — Emergency vehicle
+    // =========================================================================
+    makeTexture('ambulance', 60, 35, (g) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.25);
+      g.fillRoundedRect(3, 3, 54, 32, 5);
+
+      // White body
+      g.fillStyle(0xffffff);
+      g.fillRoundedRect(0, 4, 56, 30, 5);
+      // Red cross on side
+      g.fillStyle(0xcc0000);
+      g.fillRect(18, 10, 8, 18);
+      g.fillRect(14, 16, 16, 8);
+      // Red stripe
+      g.fillStyle(0xcc0000);
+      g.fillRect(4, 12, 50, 4);
+      // Blue stripe
+      g.fillStyle(0x0044cc);
+      g.fillRect(4, 18, 50, 4);
+      // Light bar
+      g.fillStyle(0x222222);
+      g.fillRect(10, 4, 35, 6);
+      g.fillStyle(0xff0000);
+      g.fillRect(12, 6, 8, 4);
+      g.fillStyle(0x0044cc);
+      g.fillRect(28, 6, 8, 4);
+
+      // Wheels
+      g.fillStyle(0x111111);
+      g.fillRect(8, 0, 14, 5);
+      g.fillRect(8, 30, 14, 5);
+      g.fillRect(34, 0, 14, 5);
+      g.fillRect(34, 30, 14, 5);
+      g.fillStyle(0x444444);
+      g.fillRect(10, 1, 10, 3);
+      g.fillRect(10, 31, 10, 3);
+      g.fillRect(36, 1, 10, 3);
+      g.fillRect(36, 31, 10, 3);
+    });
+
+    // =========================================================================
+    // 39. FIRE TRUCK (70x40) — Big emergency
+    // =========================================================================
+    makeTexture('firetruck', 70, 40, (g) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.3);
+      g.fillRoundedRect(4, 4, 62, 36, 5);
+
+      // Red body
+      g.fillStyle(0xcc0000);
+      g.fillRoundedRect(0, 5, 65, 35, 5);
+      // White stripes
+      g.fillStyle(0xffffff);
+      g.fillRect(4, 14, 58, 3);
+      g.fillRect(4, 24, 58, 3);
+      // Ladder on top
+      g.fillStyle(0x888888);
+      g.fillRect(8, 2, 50, 4);
+      g.fillStyle(0x666666);
+      for (let x = 12; x < 55; x += 6) {
+        g.fillRect(x, 2, 2, 4);
+      }
+
+      // Light bar
+      g.fillStyle(0x222222);
+      g.fillRect(15, 5, 35, 5);
+      g.fillStyle(0xff0000);
+      g.fillRect(17, 6, 6, 3);
+      g.fillRect(27, 6, 6, 3);
+      g.fillRect(37, 6, 6, 3);
+
+      // Wheels (6)
+      g.fillStyle(0x111111);
+      g.fillRect(10, 1, 16, 6);
+      g.fillRect(10, 33, 16, 6);
+      g.fillRect(38, 1, 16, 6);
+      g.fillRect(38, 33, 16, 6);
+      g.fillStyle(0x444444);
+      g.fillRect(12, 2, 12, 4);
+      g.fillRect(12, 34, 12, 4);
+      g.fillRect(40, 2, 12, 4);
+      g.fillRect(40, 34, 12, 4);
+    });
+
+    // =========================================================================
+    // 40. PICKUP TRUCK (65x35) — Civilian
+    // =========================================================================
+    makeTexture('pickup', 65, 35, (g) => {
+      const colors = [0x4444aa, 0x44aa44, 0xaa4444, 0xaaaa44, 0x888888];
+      const bodyColor = colors[Math.floor(Math.random() * colors.length)];
+      // Shadow
+      g.fillStyle(0x000000, 0.25);
+      g.fillRoundedRect(3, 3, 59, 32, 5);
+
+      // Cab
+      g.fillStyle(bodyColor);
+      g.fillRoundedRect(35, 5, 28, 25, 4);
+      // Windshield
+      g.fillStyle(0x223355);
+      g.fillRoundedRect(42, 8, 16, 12, 2);
+      // Bed
+      g.fillStyle(bodyColor);
+      g.fillRect(4, 10, 30, 18);
+      // Bed liner
+      g.fillStyle(0x222222, 0.4);
+      g.fillRect(6, 12, 26, 14);
+      // Tailgate
+      g.fillStyle(0x666666);
+      g.fillRect(2, 10, 4, 18);
+
+      // Wheels
+      g.fillStyle(0x111111);
+      g.fillRect(10, 0, 14, 5);
+      g.fillRect(10, 30, 14, 5);
+      g.fillRect(40, 0, 14, 5);
+      g.fillRect(40, 30, 14, 5);
+      g.fillStyle(0x444444);
+      g.fillRect(12, 1, 10, 3);
+      g.fillRect(12, 31, 10, 3);
+      g.fillRect(42, 1, 10, 3);
+      g.fillRect(42, 31, 10, 3);
+    });
+
+    // =========================================================================
+    // 41. SPORTS CAR LOW (55x28) — Very fast
+    // =========================================================================
+    makeTexture('sports_low', 55, 28, (g) => {
+      const colors = [0xff2222, 0x22ff22, 0x2222ff, 0xffff22, 0xff22ff, 0xffffff];
+      const bodyColor = colors[Math.floor(Math.random() * colors.length)];
+      // Shadow
+      g.fillStyle(0x000000, 0.2);
+      g.fillEllipse(27, 14, 50, 24);
+
+      // Ultra-low body
+      g.fillStyle(bodyColor);
+      g.fillRoundedRect(3, 4, 49, 20, 3);
+      // Windshield (raked)
+      g.fillStyle(0x112244);
+      g.fillTriangle(30, 6, 30, 22, 45, 12);
+      // Spoiler
+      g.fillStyle(0x222222);
+      g.fillRect(4, 2, 47, 2);
+      // Side skirts
+      g.fillStyle(0x000000);
+      g.fillRect(5, 22, 45, 2);
+
+      // Wheels (exposed)
+      g.fillStyle(0x000000);
+      g.fillCircle(12, 23, 6);
+      g.fillCircle(43, 23, 6);
+      g.fillStyle(0xcccccc);
+      g.fillCircle(12, 23, 2.5);
+      g.fillCircle(43, 23, 2.5);
+
+      // Headlights (pop-up)
+      g.fillStyle(0xffffcc);
+      g.fillCircle(50, 8, 2.5);
+      g.fillCircle(50, 20, 2.5);
+    });
+
+    // =========================================================================
+    // 42. BUS (85x40) — Slow, big
+    // =========================================================================
+    makeTexture('bus', 85, 40, (g) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.3);
+      g.fillRoundedRect(4, 4, 77, 36, 5);
+
+      // Yellow body
+      g.fillStyle(0xffcc00);
+      g.fillRoundedRect(0, 5, 80, 35, 5);
+      // Windows
+      g.fillStyle(0x223355);
+      for (let x = 10; x < 70; x += 10) {
+        g.fillRect(x, 8, 8, 20);
+      }
+      // Front window
+      g.fillRect(68, 8, 10, 20);
+      // Door
+      g.fillStyle(0xeedd00);
+      g.fillRect(4, 15, 14, 20);
+      // Stripe
+      g.fillStyle(0x000000);
+      g.fillRect(4, 12, 75, 2);
+
+      // Wheels (6)
+      g.fillStyle(0x111111);
+      g.fillRect(12, 0, 16, 6);
+      g.fillRect(12, 34, 16, 6);
+      g.fillRect(40, 0, 16, 6);
+      g.fillRect(40, 34, 16, 6);
+      g.fillStyle(0x444444);
+      g.fillRect(14, 1, 12, 4);
+      g.fillRect(14, 35, 12, 4);
+      g.fillRect(42, 1, 12, 4);
+      g.fillRect(42, 35, 12, 4);
+    });
+
+    // =========================================================================
+    // 43. HELICOPTER (50x50) — Air hazard
+    // =========================================================================
+    makeTexture('helicopter', 50, 50, (g) => {
+      // Shadow (on ground)
+      g.fillStyle(0x000000, 0.15);
+      g.fillEllipse(25, 42, 40, 10);
+
+      // Body
+      g.fillStyle(0x333344);
+      g.fillRoundedRect(12, 15, 26, 20, 4);
+      // Cockpit glass
+      g.fillStyle(0x224488);
+      g.fillRoundedRect(12, 16, 14, 15, 3);
+      // Tail boom
+      g.fillStyle(0x444455);
+      g.fillRect(38, 22, 10, 4);
+      // Tail rotor
+      g.fillStyle(0x666666);
+      g.fillRect(46, 20, 2, 8);
+
+      // Main rotor (blurred)
+      g.fillStyle(0x888888, 0.3);
+      g.fillEllipse(25, 10, 48, 4);
+      g.fillEllipse(25, 10, 4, 48);
+      // Rotor hub
+      g.fillStyle(0x222222);
+      g.fillCircle(25, 10, 3);
+
+      // Skids
+      g.fillStyle(0x555555);
+      g.fillRect(10, 33, 30, 2);
+      g.fillRect(14, 31, 2, 4);
+      g.fillRect(36, 31, 2, 4);
+    });
+
+    // =========================================================================
+    // 44. DRONE (20x20) — Small air power-up carrier
+    // =========================================================================
+    makeTexture('drone', 20, 20, (g) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.1);
+      g.fillEllipse(10, 18, 16, 4);
+
+      // Body
+      g.fillStyle(0x222233);
+      g.fillRect(7, 7, 6, 6);
+      // Arms
+      g.fillStyle(0x333344);
+      g.fillRect(0, 9, 7, 2);
+      g.fillRect(13, 9, 7, 2);
+      g.fillRect(9, 0, 2, 7);
+      g.fillRect(9, 13, 2, 7);
+      // Props (blurred)
+      g.fillStyle(0x8888aa, 0.4);
+      g.fillCircle(3, 9, 5);
+      g.fillCircle(17, 9, 5);
+      g.fillCircle(9, 3, 5);
+      g.fillCircle(9, 17, 5);
+      // Center light
+      g.fillStyle(0x00ffcc);
+      g.fillCircle(10, 10, 2);
+    });
+
+    // =========================================================================
+    // 45. CARGO CONTAINER (60x35) — Falling obstacle
+    // =========================================================================
+    makeTexture('container', 60, 35, (g) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.3);
+      g.fillRoundedRect(3, 3, 54, 32, 3);
+
+      // Container body
+      g.fillStyle(0x665533);
+      g.fillRect(0, 0, 58, 35);
+      // Corner castings
+      g.fillStyle(0x443311);
+      g.fillRect(0, 0, 6, 6);
+      g.fillRect(52, 0, 6, 6);
+      g.fillRect(0, 29, 6, 6);
+      g.fillRect(52, 29, 6, 6);
+      // Door lines
+      g.lineStyle(2, 0x443311, 0.8);
+      g.lineBetween(28, 2, 28, 33);
+      // Handles
+      g.fillStyle(0x887755);
+      g.fillRect(20, 14, 6, 2);
+      g.fillRect(20, 19, 6, 2);
+      g.fillRect(34, 14, 6, 2);
+      g.fillRect(34, 19, 6, 2);
+      // Warning stripes on top
+      g.fillStyle(0xffff00);
+      for (let x = 4; x < 54; x += 6) {
+        g.fillRect(x, 2, 3, 3);
+      }
+    });
+
+    // =========================================================================
+    // 46. COIN ANIMATED FRAMES (20x20 x 8 frames)
+    // =========================================================================
+    for (let frame = 0; frame < 8; frame++) {
+      const angle = (frame / 8) * Math.PI * 2;
+      const scaleX = Math.abs(Math.cos(angle));
+      makeTexture(`coin_${frame}`, 20, 20, (g) => {
+        // Glow
+        g.fillStyle(0xFFDD00, 0.2);
+        g.fillCircle(10, 10, 10);
+        // Coin body
+        g.fillStyle(0xFFCC00);
+        g.fillEllipse(10, 10, 16 * scaleX, 16);
+        // Edge
+        g.fillStyle(0xBB8800);
+        g.fillEllipse(10, 10, 18 * scaleX, 18);
+        // Inner detail
+        g.fillStyle(0xFFDD44);
+        g.fillEllipse(10, 10, 10 * scaleX, 10);
+        // $ sign
+        g.fillStyle(0x886600);
+        g.fillRect(9, 5, 2, 10);
+        g.fillRect(7, 7, 6, 2);
+        g.fillRect(7, 13, 6, 2);
+      });
+    }
+
+    // =========================================================================
+    // 47. SHIELD BUBBLE (40x40) — Shield effect
+    // =========================================================================
+    makeTexture('shield_bubble', 40, 40, (g) => {
+      // Outer glow
+      g.fillStyle(0x0088FF, 0.15);
+      g.fillCircle(20, 20, 20);
+      // Shield ring
+      g.lineStyle(3, 0x00AAFF, 0.6);
+      g.strokeCircle(20, 20, 18);
+      // Inner glow
+      g.lineStyle(2, 0x66DDFF, 0.4);
+      g.strokeCircle(20, 20, 14);
+      // Hexagon pattern
+      g.lineStyle(1, 0x0088FF, 0.2);
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        const x1 = 20 + Math.cos(a) * 16;
+        const y1 = 20 + Math.sin(a) * 16;
+        const x2 = 20 + Math.cos(a) * 10;
+        const y2 = 20 + Math.sin(a) * 10;
+        g.lineBetween(x1, y1, x2, y2);
+      }
+    });
+
+    // =========================================================================
+    // 48. NITRO FLAME (30x40) — Boost effect
+    // =========================================================================
+    makeTexture('nitro_flame', 30, 40, (g) => {
+      // Base flame
+      g.fillStyle(0xFF4400);
+      g.fillTriangle(15, 40, 0, 0, 30, 0);
+      // Middle
+      g.fillStyle(0xFF8800);
+      g.fillTriangle(15, 35, 4, 8, 26, 8);
+      // Inner
+      g.fillStyle(0xFFCC00);
+      g.fillTriangle(15, 28, 7, 12, 23, 12);
+      // Core
+      g.fillStyle(0xFFFF88);
+      g.fillTriangle(15, 20, 9, 16, 21, 16);
+      // Tip
+      g.fillStyle(0xFFFFFF);
+      g.fillCircle(15, 12, 3);
+    });
+
+    // =========================================================================
+    // 49. EXPLOSION RING (60x60) — Big explosion
+    // =========================================================================
+    makeTexture('explosion_ring', 60, 60, (g) => {
+      // Outer ring
+      g.fillStyle(0xFF4400, 0.3);
+      g.fillCircle(30, 30, 30);
+      g.fillStyle(0xFF8800, 0.4);
+      g.fillCircle(30, 30, 24);
+      g.fillStyle(0xFFCC00, 0.5);
+      g.fillCircle(30, 30, 18);
+      g.fillStyle(0xFFFF88, 0.6);
+      g.fillCircle(30, 30, 12);
+      g.fillStyle(0xFFFFFF, 0.7);
+      g.fillCircle(30, 30, 6);
+    });
+
+    // =========================================================================
+    // 50. LEVEL UP BANNER (400x100)
+    // =========================================================================
+    makeTexture('levelup_banner', 400, 100, (g) => {
+      // Background
+      g.fillStyle(0x000000, 0.85);
+      g.fillRoundedRect(0, 0, 400, 100, 16);
+      g.lineStyle(4, 0xFFCC00, 1);
+      g.strokeRoundedRect(2, 2, 396, 96, 14);
+      // Gold trim
+      g.fillStyle(0xFFCC00);
+      g.fillRoundedRect(4, 4, 392, 8, 10);
+      g.fillRoundedRect(4, 88, 392, 8, 10);
+      // "LEVEL UP" text (blocky)
+      g.fillStyle(0xFF4400);
+      const letters = 'LEVELUP';
+      let x = 50;
+      for (const ch of letters) {
+        if (ch === 'L') {
+          g.fillRect(x, 20, 4, 40);
+          g.fillRect(x, 56, 20, 4);
+        } else if (ch === 'E') {
+          g.fillRect(x, 20, 20, 4);
+          g.fillRect(x, 20, 4, 20);
+          g.fillRect(x, 40, 16, 4);
+          g.fillRect(x, 56, 20, 4);
+        } else if (ch === 'V') {
+          g.fillRect(x, 20, 4, 30);
+          g.fillRect(x+16, 20, 4, 30);
+          g.fillTriangle(x, 50, x+10, 50, x+20, 56);
+        } else if (ch === 'U') {
+          g.fillRect(x, 20, 4, 36);
+          g.fillRect(x+16, 20, 4, 36);
+          g.fillRect(x, 56, 20, 4);
+        } else if (ch === 'P') {
+          g.fillRect(x, 20, 4, 36);
+          g.fillRect(x, 20, 16, 4);
+          g.fillRect(x, 38, 16, 4);
+          g.fillRect(x+16, 20, 4, 18);
+        }
+        x += 28;
+      }
+      x += 20;
+      // "UP"
+      g.fillRect(x, 20, 4, 36);
+      g.fillRect(x+16, 20, 4, 36);
+      g.fillRect(x, 56, 20, 4);
+    });
+
     // Helper RNG function used by buildings and road (defined inline for building usage)
     function rng(seed) {
       let s = seed;
