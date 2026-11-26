@@ -1,10 +1,19 @@
 import Phaser from 'phaser';
-import GameScene from './GameScene.js';
+import BootScene from './scenes/BootScene.js';
+import MenuScene from './scenes/MenuScene.js';
+import GameScene from './scenes/GameScene.js';
+import GameOverScene from './scenes/GameOverScene.js';
 
 const config = {
   type: Phaser.AUTO,
   width: 800,
   height: 450,
+  parent: 'game',
+  backgroundColor: '#111111',
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
   physics: {
     default: 'arcade',
     arcade: {
@@ -12,8 +21,11 @@ const config = {
       debug: false,
     },
   },
-  scene: GameScene,
-  parent: 'game',
+  scene: [BootScene, MenuScene, GameScene, GameOverScene],
+  render: {
+    pixelArt: false,
+    antialias: true,
+  },
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
