@@ -152,9 +152,9 @@ export default class GameOverScene extends Phaser.Scene {
       statsY += 30;
     }
     
-    // Stats panel - mathematically centered within border
-    const panelW = 420;
-    const panelH = 88;
+    // Stats panel - cleanly centered within border outline without separators
+    const panelW = 400;
+    const panelH = 84;
     const panelX = width / 2;
     const panelY = statsY + 46;
     const panelBg = this.add.rectangle(panelX, panelY, panelW, panelH, 0x111322, 0.9);
@@ -162,26 +162,19 @@ export default class GameOverScene extends Phaser.Scene {
     panelBg.setDepth(2);
 
     const stats = [
-      { label: 'CARS WRECKED', value: this.carsWrecked.toString() },
-      { label: 'MAX COMBO', value: 'x' + this.maxCombo },
+      { label: 'WRECKS', value: this.carsWrecked.toString() },
+      { label: 'COMBO', value: 'x' + this.maxCombo },
       { label: 'DISTANCE', value: Math.round(this.distanceTraveled).toLocaleString() + 'm' },
       { label: 'LEVEL', value: this.levelReached.toString() },
     ];
 
-    const colSpacing = 100;
+    const colSpacing = 90;
     const count = stats.length;
 
     for (let i = 0; i < count; i++) {
       const sx = panelX + (i - (count - 1) / 2) * colSpacing;
 
-      // Divider line between stat columns
-      if (i > 0) {
-        const divX = panelX + (i - count / 2) * colSpacing;
-        const div = this.add.rectangle(divX, panelY, 1, 46, 0x2a3855, 0.8);
-        div.setDepth(2.5);
-      }
-
-      this.add.text(sx, panelY - 16, stats[i].label, {
+      this.add.text(sx, panelY - 15, stats[i].label, {
         fontFamily: 'Arial, sans-serif',
         fontSize: '11px',
         fontWeight: 'bold',
@@ -190,7 +183,7 @@ export default class GameOverScene extends Phaser.Scene {
         align: 'center',
       }).setOrigin(0.5, 0.5).setDepth(3);
 
-      this.add.text(sx, panelY + 14, stats[i].value, {
+      this.add.text(sx, panelY + 15, stats[i].value, {
         fontFamily: 'Impact, Arial Black, sans-serif',
         fontSize: '24px',
         color: '#ff9933',
