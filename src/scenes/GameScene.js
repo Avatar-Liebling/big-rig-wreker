@@ -1181,7 +1181,9 @@ export default class GameScene extends Phaser.Scene {
     this.game.audioManager?.stopAll();
     this.game.audioManager?.play('explosion');
     this.cameras.main.shake(400, 0.02);
-    this.burst(this.player.x, this.player.y, 'explosion_particle', 24);
+    if (this.player && this.player.active) {
+      this.burst(this.player.x, this.player.y, 'explosion_particle', 24);
+    }
     
     // Analytics
     if (this.analytics) {
