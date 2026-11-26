@@ -152,40 +152,56 @@ export default class GameOverScene extends Phaser.Scene {
       statsY += 30;
     }
     
-    // Stats panel
-    const panelBg = this.add.rectangle(width / 2, statsY + 40, 380, 100, 0x111122, 0.8);
-    panelBg.setStrokeStyle(1, 0x333355);
+    // Stats panel - mathematically centered within border
+    const panelW = 420;
+    const panelH = 88;
+    const panelX = width / 2;
+    const panelY = statsY + 46;
+    const panelBg = this.add.rectangle(panelX, panelY, panelW, panelH, 0x111322, 0.9);
+    panelBg.setStrokeStyle(1.5, 0x334466);
     panelBg.setDepth(2);
 
     const stats = [
-      { label: 'Cars Wrecked', value: this.carsWrecked.toString() },
-      { label: 'Max Combo', value: 'x' + this.maxCombo },
-      { label: 'Distance', value: Math.round(this.distanceTraveled).toLocaleString() + 'm' },
-      { label: 'Level', value: this.levelReached.toString() },
+      { label: 'CARS WRECKED', value: this.carsWrecked.toString() },
+      { label: 'MAX COMBO', value: 'x' + this.maxCombo },
+      { label: 'DISTANCE', value: Math.round(this.distanceTraveled).toLocaleString() + 'm' },
+      { label: 'LEVEL', value: this.levelReached.toString() },
     ];
 
-    const statStartX = width / 2 - 160;
-    const statSpacing = 95;
+    const colSpacing = 100;
+    const count = stats.length;
 
-    for (let i = 0; i < stats.length; i++) {
-      const sx = statStartX + i * statSpacing;
-      this.add.text(sx, statsY + 15, stats[i].label, {
+    for (let i = 0; i < count; i++) {
+      const sx = panelX + (i - (count - 1) / 2) * colSpacing;
+
+      // Divider line between stat columns
+      if (i > 0) {
+        const divX = panelX + (i - count / 2) * colSpacing;
+        const div = this.add.rectangle(divX, panelY, 1, 46, 0x2a3855, 0.8);
+        div.setDepth(2.5);
+      }
+
+      this.add.text(sx, panelY - 16, stats[i].label, {
         fontFamily: 'Arial, sans-serif',
         fontSize: '11px',
-        color: '#888888',
+        fontWeight: 'bold',
+        color: '#8899aa',
+        letterSpacing: 1,
         align: 'center',
-      }).setOrigin(0.5, 0).setDepth(3);
+      }).setOrigin(0.5, 0.5).setDepth(3);
 
-      this.add.text(sx, statsY + 35, stats[i].value, {
+      this.add.text(sx, panelY + 14, stats[i].value, {
         fontFamily: 'Impact, Arial Black, sans-serif',
         fontSize: '24px',
-        color: '#ff8844',
+        color: '#ff9933',
+        stroke: '#000000',
+        strokeThickness: 2,
         align: 'center',
-      }).setOrigin(0.5, 0).setDepth(3);
+      }).setOrigin(0.5, 0.5).setDepth(3);
     }
 
-    // Buttons
-    const buttonsY = statsY + 110;
+    // Buttons - placed with consistent spacing below the stats panel
+    const buttonsY = panelY + panelH / 2 + 30;
     this.createButton(width / 2 - 100, buttonsY, 'PLAY AGAIN', () => {
       this.cameras.main.fadeOut(400, 0, 0, 0);
       this.cameras.main.once('camerafadeoutcomplete', () => {
