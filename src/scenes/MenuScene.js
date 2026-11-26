@@ -260,47 +260,70 @@ export default class MenuScene extends Phaser.Scene {
     this.overlay.add(title);
 
     // Volume label
-    const volLabel = this.add.text(width / 2 - 120, height / 2 - 40, 'Volume:', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '16px',
-      color: '#cccccc',
+    const volLabel = this.add.text(width / 2 - 160, height / 2 - 40, 'VOLUME', {
+      fontFamily: 'Impact, Arial Black, sans-serif',
+      fontSize: '14px',
+      color: '#ffcc00',
+      letterSpacing: 1,
     }).setOrigin(0, 0.5);
     this.overlay.add(volLabel);
 
-    // Volume slider track
-    const sliderX = width / 2 - 30;
+    // Volume slider track - wider, with rounded ends
+    const sliderX = width / 2 - 10;
     const sliderY = height / 2 - 40;
-    const sliderW = 180;
-    const track = this.add.rectangle(sliderX + sliderW / 2, sliderY, sliderW, 8, 0x444444);
+    const sliderW = 240;
+    const track = this.add.rectangle(sliderX + sliderW / 2, sliderY, sliderW, 12, 0x2a2a3a);
+    track.setStrokeStyle(2, 0x444466);
     this.overlay.add(track);
+    // Track background segments for visual feedback
+    for (let i = 0; i < 10; i++) {
+      const seg = this.add.rectangle(sliderX + i * 24 + 12, sliderY, 18, 6, 0x1a1a2a);
+      seg.setStrokeStyle(1, 0x333355);
+      this.overlay.add(seg);
+    }
 
     // Volume slider fill + handle
     const currentVol = this.game.audioManager ? this.game.audioManager.getVolume() : 0.7;
-    const fillBar = this.add.rectangle(sliderX, sliderY, sliderW * currentVol, 8, 0xff4400);
+    const fillBar = this.add.rectangle(sliderX, sliderY, sliderW * currentVol, 12, 0xff5500);
     fillBar.setOrigin(0, 0.5);
+    fillBar.setMask(this.add.graphics().fillRect(sliderX, sliderY - 6, sliderW * currentVol, 12));
     this.overlay.add(fillBar);
 
-    const handle = this.add.circle(sliderX + sliderW * currentVol, sliderY, 12, 0xff6622);
+    const handle = this.add.circle(sliderX + sliderW * currentVol, sliderY, 16, 0xff7722);
+    handle.setStrokeStyle(3, 0xffcc00);
     handle.setInteractive({ draggable: true, useHandCursor: true });
     this.overlay.add(handle);
+    // Handle glow
+    const handleGlow = this.add.circle(sliderX + sliderW * currentVol, sliderY, 22, 0xff5500, 0.3);
+    this.overlay.add(handleGlow);
 
-    const volText = this.add.text(sliderX + sliderW + 45, sliderY, Math.round(currentVol * 100) + '%', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '14px',
-      color: '#ffffff',
+    // Percentage text - right-aligned, well clear of slider
+    const volText = this.add.text(sliderX + sliderW + 60, sliderY, Math.round(currentVol * 100) + '%', {
+      fontFamily: 'Impact, Arial Black, sans-serif',
+      fontSize: '18px',
+      color: '#ffcc00',
+      stroke: '#000000',
+      strokeThickness: 3,
     }).setOrigin(0, 0.5);
     this.overlay.add(volText);
 
     handle.on('drag', (_pointer, dragX) => {
       const clampedX = Phaser.Math.Clamp(dragX, sliderX, sliderX + sliderW);
       handle.x = clampedX;
+      handleGlow.x = clampedX;
       const vol = (clampedX - sliderX) / sliderW;
       fillBar.width = sliderW * vol;
+      // Update mask
+      fillBar.setMask(this.add.graphics().fillRect(sliderX, sliderY - 6, sliderW * vol, 12));
       volText.setText(Math.round(vol * 100) + '%');
       if (this.game.audioManager) {
         this.game.audioManager.setVolume(vol);
       }
     });
+
+    // Volume icon
+    const volIcon = this.add.text(sliderX - 40, sliderY, '🔊', { fontSize: '20px' }).setOrigin(0.5);
+    this.overlay.add(volIcon);
 
     // Mute toggle
     const muteLabel = this.add.text(width / 2 - 120, height / 2 + 20, 'Mute:', {

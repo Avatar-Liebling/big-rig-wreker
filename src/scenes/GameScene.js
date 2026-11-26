@@ -149,64 +149,168 @@ export default class GameScene extends Phaser.Scene {
     this.trailer.setAngle(-90);
     this.trailer.setDepth(9);
 
+    // Enhanced exhaust with multiple layers
     this.exhaust = this.add.particles(0, 0, 'smoke_particle', {
-      lifespan: 500,
-      speed: { min: 10, max: 40 },
-      scale: { start: 0.5, end: 0 },
-      alpha: { start: 0.35, end: 0 },
-      frequency: 60,
+      lifespan: { min: 400, max: 800 },
+      speed: { min: 15, max: 50 },
+      speedY: { min: 20, max: 60 },
+      scale: { start: 0.6, end: 0 },
+      alpha: { start: 0.4, end: 0 },
+      frequency: 50,
+      rotate: { min: 0, max: 360 },
+      gravityY: 10,
     }).setDepth(8);
+    
+    // Second exhaust layer - darker smoke
+    this.exhaust2 = this.add.particles(0, 0, 'smoke_particle', {
+      lifespan: { min: 600, max: 1000 },
+      speed: { min: 5, max: 25 },
+      speedY: { min: 10, max: 40 },
+      scale: { start: 0.8, end: 0 },
+      alpha: { start: 0.2, end: 0 },
+      frequency: 30,
+      tint: 0x111111,
+      gravityY: 5,
+    }).setDepth(7);
 
     this.flames = this.add.particles(0, 0, 'spark_particle', {
-      lifespan: 220,
-      speedY: { min: 80, max: 180 },
-      scale: { start: 0.8, end: 0 },
-      tint: [0xffaa00, 0xff4400, 0xffff88],
-      frequency: 30,
+      lifespan: { min: 150, max: 300 },
+      speedY: { min: 100, max: 220 },
+      speedX: { min: -30, max: 30 },
+      scale: { start: 1, end: 0 },
+      tint: [0xffaa00, 0xff4400, 0xffff88, 0xff6600],
+      frequency: 20,
       emitting: false,
       blendMode: 'ADD',
+      gravityY: -50,
     }).setDepth(11);
 
+    // Nitro flames (separate, more intense)
+    this.nitroFlames = this.add.particles(0, 0, 'nitro_flame', {
+      lifespan: { min: 100, max: 200 },
+      speedY: { min: 200, max: 350 },
+      scale: { start: 0.5, end: 0 },
+      frequency: 15,
+      emitting: false,
+      blendMode: 'ADD',
+      gravityY: -100,
+    }).setDepth(12);
+
     this.headlights = this.add.ellipse(this.player.x, this.player.y - 40, 70, 90, 0xffffcc, 0.08).setDepth(7);
+    
+    // Headlight beams (dynamic)
+    this.headlightBeamL = this.add.graphics().setDepth(6);
+    this.headlightBeamR = this.add.graphics().setDepth(6);
+    this.updateHeadlights();
+  }
+  
+  updateHeadlights() {
+    const x = this.player.x;
+    const y = this.player.y - 40;
+    // Left beam
+    this.headlightBeamL.clear();
+    this.headlightBeamL.fillStyle(0xffffcc, 0.06);
+    this.headlightBeamL.fillTriangle(x - 20, y, x - 35, y + 80, x - 5, y + 80);
+    // Right beam
+    this.headlightBeamR.clear();
+    this.headlightBeamR.fillStyle(0xffffcc, 0.06);
+    this.headlightBeamR.fillTriangle(x + 20, y, x + 5, y + 80, x + 35, y + 80);
   }
 
   createHud() {
     const hud = (obj) => obj.setScrollFactor(0).setDepth(50);
-    this.hudBg = hud(this.add.rectangle(W / 2, 24, W, 48, 0x000000, 0.45));
-    this.scoreText = hud(this.add.text(16, 8, 'SCORE 0', {
-      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '28px', color: '#ffcc00',
+    
+    // Top HUD bar with gradient background
+    const topBg = this.add.graphics();
+    topBg.fillGradientStyle(0x0a1018, 0x0a1018, 0x141820, 0x141820, 1);
+    topBg.fillRect(0, 0, W, 52);
+    hud(topBg);
+    // Top border accent
+    const topAccent = this.add.graphics();
+    topAccent.lineStyle(2, 0xffcc00, 0.6);
+    topAccent.lineBetween(0, 52, W, 52);
+    hud(topAccent);
+    
+    this.scoreText = hud(this.add.text(16, 6, 'SCORE', {
+      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '11px', color: '#88aaaa',
+      letterSpacing: 1,
     }));
-    this.comboText = hud(this.add.text(W / 2, 58, '', {
-      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '26px', color: '#ffffff',
+    this.scoreValue = hud(this.add.text(16, 20, '0', {
+      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '26px', color: '#ffcc00',
+      stroke: '#000000', strokeThickness: 2,
+    }));
+    
+    // Center: Level + Combo
+    this.levelText = hud(this.add.text(W / 2, 6, 'LEVEL 1', {
+      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '14px', color: '#ff8844',
+      stroke: '#000000', strokeThickness: 2,
     }).setOrigin(0.5));
-    this.speedText = hud(this.add.text(W - 16, 8, '0 MPH', {
-      fontFamily: 'Arial, sans-serif', fontSize: '16px', color: '#ffffff',
-    }).setOrigin(1, 0));
-    this.speedBar = hud(this.add.rectangle(W - 16, 36, 140, 8, 0x333333).setOrigin(1, 0.5));
-    this.speedFill = hud(this.add.rectangle(W - 156, 36, 1, 8, 0x44ddff).setOrigin(0, 0.5));
-
-    hud(this.add.image(22, H - 28, 'heart').setDisplaySize(18, 18));
-    this.hpBar = hud(this.add.rectangle(40, H - 28, 160, 12, 0x331111).setOrigin(0, 0.5));
-    this.hpFill = hud(this.add.rectangle(40, H - 28, 160, 12, 0xff3333).setOrigin(0, 0.5));
-    this.hpText = hud(this.add.text(210, H - 36, '100', { fontFamily: 'Arial', fontSize: '14px', color: '#fff' }));
-
-    hud(this.add.image(W / 2 - 70, H - 28, 'nitro').setDisplaySize(18, 18));
-    this.nitroBar = hud(this.add.rectangle(W / 2 - 54, H - 28, 120, 10, 0x332200).setOrigin(0, 0.5));
-    this.nitroFill = hud(this.add.rectangle(W / 2 - 54, H - 28, 0, 10, 0xff8800).setOrigin(0, 0.5));
-
-    this.levelText = hud(this.add.text(W - 16, H - 36, 'LEVEL 1', {
-      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '20px', color: '#ff8844',
-    }).setOrigin(1, 0));
-
-    // Daily challenge display
-    this.dailyText = hud(this.add.text(W / 2, 80, '', {
-      fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#88ccff',
+    this.comboText = hud(this.add.text(W / 2, 26, '', {
+      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '22px', color: '#ffcc00',
+      stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5));
+    
+    // Right: Speed
+    this.speedText = hud(this.add.text(W - 16, 6, '0 MPH', {
+      fontFamily: 'Arial, sans-serif', fontSize: '12px', color: '#88aaaa',
+    }).setOrigin(1, 0));
+    this.speedBar = hud(this.add.rectangle(W - 16, 26, 160, 6, 0x1a1a2a).setOrigin(1, 0.5));
+    this.speedBar.setStrokeStyle(1, 0x333355);
+    this.speedFill = hud(this.add.rectangle(W - 176, 26, 1, 6, 0x44ddff).setOrigin(0, 0.5));
+    this.speedFill.setMask(this.add.graphics().fillRect(W - 176, 23, 1, 6));
+    
+    // Bottom HUD bar
+    const botBg = this.add.graphics();
+    botBg.fillGradientStyle(0x141820, 0x141820, 0x0a1018, 0x0a1018, 1);
+    botBg.fillRect(0, H - 52, W, 52);
+    hud(botBg);
+    const botAccent = this.add.graphics();
+    botAccent.lineStyle(2, 0xffcc00, 0.6);
+    botAccent.lineBetween(0, H - 52, W, H - 52);
+    hud(botAccent);
+    
+    // Health (left)
+    hud(this.add.image(22, H - 26, 'heart').setDisplaySize(20, 20));
+    this.hpBar = hud(this.add.rectangle(46, H - 26, 180, 10, 0x1a0a0a).setOrigin(0, 0.5));
+    this.hpBar.setStrokeStyle(1, 0x442222);
+    this.hpFill = hud(this.add.rectangle(46, H - 26, 180, 10, 0xff3333).setOrigin(0, 0.5));
+    this.hpFill.setMask(this.add.graphics().fillRect(46, H - 31, 180, 10));
+    this.hpText = hud(this.add.text(236, H - 32, '100', { 
+      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '16px', color: '#fff',
+      stroke: '#000000', strokeThickness: 2,
+    }));
+    
+    // Nitro (center-left)
+    hud(this.add.image(W / 2 - 140, H - 26, 'nitro').setDisplaySize(20, 20));
+    this.nitroBar = hud(this.add.rectangle(W / 2 - 114, H - 26, 140, 8, 0x1a1400).setOrigin(0, 0.5));
+    this.nitroBar.setStrokeStyle(1, 0x443300);
+    this.nitroFill = hud(this.add.rectangle(W / 2 - 114, H - 26, 0, 8, 0xff8800).setOrigin(0, 0.5));
+    this.nitroFill.setMask(this.add.graphics().fillRect(W / 2 - 114, H - 30, 0, 8));
+    
+    // Daily challenge (center-right) - better position
+    this.dailyContainer = hud(this.add.container(W / 2 + 30, H - 26).setDepth(50));
+    this.dailyBg = this.add.rectangle(0, 0, 280, 28, 0x0a1424, 0.8);
+    this.dailyBg.setStrokeStyle(1, 0x336699);
+    this.dailyText = this.add.text(0, 0, '', {
+      fontFamily: 'Arial, sans-serif', fontSize: '10px', color: '#88ccff',
+      wordWrap: { width: 270 },
+      align: 'center',
+    }).setOrigin(0.5);
+    this.dailyContainer.add([this.dailyBg, this.dailyText]);
+    
+    // Distance (right)
+    this.distText = hud(this.add.text(W - 16, H - 32, '0m', {
+      fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '14px', color: '#88aaaa',
+    }).setOrigin(1, 0));
 
     this.banner = hud(this.add.text(W / 2, H / 2, '', {
       fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '72px', color: '#ffffff',
       stroke: '#000000', strokeThickness: 8,
     }).setOrigin(0.5));
+    
+    // Screen edge damage vignette
+    this.damageVignette = this.add.graphics();
+    hud(this.damageVignette);
   }
 
   createPause() {
@@ -499,18 +603,42 @@ export default class GameScene extends Phaser.Scene {
     const cluster = Phaser.Math.Between(0, 1) === 0;
     const count = cluster ? Phaser.Math.Between(2, 4) : 1;
     for (let i = 0; i < count; i++) {
-      const soft = Phaser.Math.Between(0, 1) === 0;
-      const key = soft
-        ? Phaser.Math.RND.pick(['cone', 'barrel'])
-        : Phaser.Math.RND.pick(['barrier_metal', 'barrier_concrete']);
-      const x = Phaser.Math.Between(ROAD_LEFT + 20, ROAD_RIGHT - 20);
-      const y = -30 - i * 36;
+      const roll = Math.random();
+      let key, w, h, kind, points;
+      
+      if (roll < 0.25) {
+        // Soft: Cone
+        key = 'cone'; w = 22; h = 22; kind = 'soft'; points = 10;
+      } else if (roll < 0.45) {
+        // Soft: Barrel
+        key = 'barrel'; w = 22; h = 22; kind = 'soft'; points = 15;
+      } else if (roll < 0.6) {
+        // Hard: Metal barrier
+        key = 'barrier_metal'; w = 70; h = 22; kind = 'hard'; points = 25;
+      } else if (roll < 0.72) {
+        // Hard: Concrete barrier
+        key = 'barrier_concrete'; w = 70; h = 22; kind = 'hard'; points = 30;
+      } else if (roll < 0.82) {
+        // New: Cargo container (wide, destructible)
+        key = 'container'; w = 60; h = 35; kind = 'hard'; points = 100;
+      } else if (roll < 0.9) {
+        // New: Oil slick (slows, no damage)
+        key = 'oil_slick'; w = 50; h = 40; kind = 'oil'; points = 0;
+      } else {
+        // New: Debris pile (multi-hit)
+        key = 'debris'; w = 40; h = 30; kind = 'debris'; points = 50;
+      }
+      
+      const x = Phaser.Math.Between(ROAD_LEFT + 30, ROAD_RIGHT - 30);
+      const y = -30 - i * 40;
       const obj = this.physics.add.sprite(x, y, key);
-      obj.setDisplaySize(soft ? 22 : 70, soft ? 22 : 22);
+      obj.setDisplaySize(w, h);
       obj.setDepth(5);
-      obj.kind = soft ? 'soft' : 'hard';
+      obj.kind = kind;
       obj.vy = 0;
       obj.wrecked = false;
+      obj.points = points;
+      obj.hits = (kind === 'debris') ? 3 : 1;
       this.entities.push(obj);
     }
   }
@@ -638,8 +766,11 @@ export default class GameScene extends Phaser.Scene {
       this.nitroActive -= dt;
       this.speed = Math.min(this.maxSpeed + 180, this.speed + 80);
       this.flames.emitting = true;
+      this.nitroFlames.emitting = true;
+      this.nitroFlames.setPosition(this.trailer.x, this.trailer.y + 12);
     } else {
       this.flames.emitting = false;
+      this.nitroFlames.emitting = false;
     }
     if (this.shieldTime > 0) {
       this.shieldTime -= dt;
@@ -651,8 +782,10 @@ export default class GameScene extends Phaser.Scene {
     this.trailer.x = Phaser.Math.Linear(this.trailer.x, this.player.x, 0.18);
     this.trailer.y = this.player.y + 58;
     this.exhaust.setPosition(this.trailer.x, this.trailer.y + 22);
+    this.exhaust2.setPosition(this.trailer.x, this.trailer.y + 26);
     this.flames.setPosition(this.trailer.x, this.trailer.y + 18);
     this.headlights.setPosition(this.player.x, this.player.y - 36);
+    this.updateHeadlights();
 
     this.distance += this.speed * dt * 0.08;
     this.dailyProgress.distance = Math.floor(this.distance);
@@ -777,6 +910,9 @@ export default class GameScene extends Phaser.Scene {
 
   hitRadius(e) {
     if (e.kind === 'hard') return 36;
+    if (e.kind === 'container') return 40;
+    if (e.kind === 'debris') return 32;
+    if (e.kind === 'oil') return 30;
     if (e.kind === 'power') return 28;
     if (e.kind === 'soft') return 22;
     return 34;
@@ -794,6 +930,28 @@ export default class GameScene extends Phaser.Scene {
       this.game.audioManager?.play('crash');
       this.burst(e.x, e.y, 'dust_particle', 8);
       e.destroy();
+      return;
+    }
+    if (e.kind === 'oil') {
+      // Oil slick - slows truck, no damage
+      e.wrecked = true;
+      this.speed = Math.max(this.minSpeed, this.speed * 0.5);
+      this.floatText(e.x, e.y, 'SLIP!', '#88aaff');
+      this.game.audioManager?.play('screech');
+      this.burst(e.x, e.y, 'smoke_particle', 12);
+      e.destroy();
+      return;
+    }
+    if (e.kind === 'debris') {
+      // Debris pile - multi-hit
+      e.hits--;
+      this.burst(e.x, e.y, 'spark_particle', 6);
+      this.floatText(e.x, e.y, 'HIT', '#ffaa00');
+      this.game.audioManager?.play('crash');
+      if (e.hits <= 0) {
+        e.wrecked = true;
+        this.wreck(e);
+      }
       return;
     }
     if (e.kind === 'car' && e.explosive && !e.wrecked) {
@@ -815,13 +973,13 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
     const fast = this.speed > 300 || this.nitroActive > 0;
-    if (e.kind === 'hard' || !fast) {
+    if (e.kind === 'hard' || e.kind === 'container' || !fast) {
       if (this.shieldTime > 0) {
         this.burst(e.x, e.y, 'spark_particle', 10);
         e.destroy();
         return;
       }
-      const dmg = e.kind === 'hard' ? 18 : 12;
+      const dmg = e.kind === 'hard' ? 18 : (e.kind === 'container' ? 22 : 12);
       this.damage(dmg);
       this.game.audioManager?.play('screech');
       this.cameras.main.shake(120, 0.004);
@@ -872,7 +1030,26 @@ export default class GameScene extends Phaser.Scene {
       wrench: () => { this.health = 100; this.floatText(e.x, e.y, 'REPAIRED', '#66ff88'); },
       shield: () => { this.shieldTime = 5; this.floatText(e.x, e.y, 'SHIELD', '#66ccff'); },
       nitro: () => { this.nitroCharge = 1; this.floatText(e.x, e.y, 'NITRO', '#ff8800'); },
-      coin: () => { this.score += 50; this.floatText(e.x, e.y, '+50', '#ffdd00'); this.dailyProgress.coins += 1; },
+      coin: () => { 
+        this.score += 50; 
+        this.floatText(e.x, e.y, '+50', '#ffdd00'); 
+        this.dailyProgress.coins += 1;
+        // Animated coin sprite
+        const coinAnim = this.add.sprite(e.x, e.y, 'coin_0').setDepth(30).setScale(1.5);
+        this.tweens.add({
+          targets: coinAnim,
+          angle: 720,
+          scale: 0,
+          alpha: 0,
+          duration: 600,
+          ease: 'Back.out',
+          onUpdate: () => {
+            const frame = Math.floor((coinAnim.angle / 720) * 8) % 8;
+            coinAnim.setTexture(`coin_${frame}`);
+          },
+          onComplete: () => coinAnim.destroy(),
+        });
+      },
       drone: () => {
         // Drone drops random powerup
         const drops = ['fuel', 'shield', 'nitro', 'wrench', 'coin'];
@@ -928,25 +1105,57 @@ export default class GameScene extends Phaser.Scene {
   }
 
   updateHud() {
-    this.scoreText.setText('SCORE ' + Math.floor(this.score).toLocaleString());
+    this.scoreValue.setText(Math.floor(this.score).toLocaleString());
     const mph = Math.round(this.speed * 0.28);
     this.speedText.setText(mph + ' MPH');
-    const ratio = Phaser.Math.Clamp((this.speed - this.minSpeed) / (this.maxSpeed - this.minSpeed), 0, 1);
-    this.speedFill.width = 140 * ratio;
-    const hp = Math.max(0, this.health) / 100;
-    this.hpFill.width = 160 * hp;
-    this.hpFill.fillColor = hp > 0.4 ? 0xff3333 : 0xffaa00;
-    this.hpText.setText(Math.max(0, Math.ceil(this.health)).toString());
-    this.nitroFill.width = 120 * Phaser.Math.Clamp(this.nitroCharge, 0, 1);
-    this.levelText.setText('LEVEL ' + this.level);
-    if (this.combo <= 1 && this.comboTimer <= 0) this.comboText.setText('');
+    const speedRatio = Phaser.Math.Clamp((this.speed - this.minSpeed) / (this.maxSpeed - this.minSpeed), 0, 1);
+    this.speedFill.width = 160 * speedRatio;
+    this.speedFill.setMask(this.add.graphics().fillRect(W - 176, 23, 160 * speedRatio, 6));
     
-    // Daily challenge
-    if (!this.dailyCompleted) {
-      this.dailyText.setText('📅 DAILY: ' + this.getDailyDisplay());
-    } else {
-      this.dailyText.setText('📅 DAILY COMPLETE! +5000');
+    const hp = Math.max(0, this.health) / 100;
+    this.hpFill.width = 180 * hp;
+    this.hpFill.setMask(this.add.graphics().fillRect(46, H - 31, 180 * hp, 10));
+    this.hpFill.fillColor = hp > 0.4 ? 0xff3333 : (hp > 0.2 ? 0xffaa00 : 0xff2200);
+    this.hpText.setText(Math.max(0, Math.ceil(this.health)).toString());
+    
+    // Damage vignette
+    this.damageVignette.clear();
+    if (hp < 0.3) {
+      const alpha = (0.3 - hp) * 0.8;
+      this.damageVignette.fillStyle(0xff0000, alpha);
+      this.damageVignette.fillRect(0, 0, W, H);
+      this.damageVignette.fillStyle(0xff0000, alpha * 0.5);
+      this.damageVignette.fillRect(0, 0, W, H);
     }
+    
+    const nitroRatio = Phaser.Math.Clamp(this.nitroCharge, 0, 1);
+    this.nitroFill.width = 140 * nitroRatio;
+    this.nitroFill.setMask(this.add.graphics().fillRect(W / 2 - 114, H - 30, 140 * nitroRatio, 8));
+    if (nitroRatio >= 1) {
+      this.nitroFill.fillColor = 0xffff00;
+    } else {
+      this.nitroFill.fillColor = 0xff8800;
+    }
+    
+    this.levelText.setText('LEVEL ' + this.level);
+    if (this.combo <= 1 && this.comboTimer <= 0) {
+      this.comboText.setText('');
+    } else {
+      this.comboText.setText('x' + this.combo + ' COMBO!');
+    }
+    
+    // Daily challenge - better formatted
+    if (!this.dailyCompleted) {
+      this.dailyText.setText(this.getDailyDisplay());
+      this.dailyBg.fillColor = 0x0a1424;
+      this.dailyBg.setStrokeStyle(1, 0x336699);
+    } else {
+      this.dailyText.setText('✓ DAILY COMPLETE! +5000');
+      this.dailyBg.fillColor = 0x0a240a;
+      this.dailyBg.setStrokeStyle(1, 0x339933);
+    }
+    
+    this.distText.setText(Math.floor(this.distance).toLocaleString() + 'm');
   }
 
   updateWeather(dt) {

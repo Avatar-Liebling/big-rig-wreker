@@ -605,7 +605,150 @@ export default class AssetGenerator {
     });
 
     // =========================================================================
-    // 14. FUEL CANISTER (25x25)
+    // 14. CARGO CONTAINER (60x35)
+    // =========================================================================
+    makeTexture('container', 60, 35, (g) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.25);
+      g.fillRoundedRect(3, 3, 54, 32, 4);
+
+      // Container body - weathered metal
+      const bodyColor = Phaser.Math.RND.pick([0x666677, 0x777766, 0x555566, 0x665555]);
+      g.fillStyle(bodyColor);
+      g.fillRoundedRect(0, 0, 56, 32, 4);
+
+      // Top ridge
+      g.fillStyle(0x888899);
+      g.fillRect(4, 0, 48, 3);
+      
+      // Side corrugations
+      g.lineStyle(1, 0x444455, 0.6);
+      for (let x = 8; x < 48; x += 8) {
+        g.lineBetween(x, 3, x, 29);
+      }
+      
+      // Corner castings
+      g.fillStyle(0x444455);
+      g.fillRect(0, 0, 6, 6);
+      g.fillRect(50, 0, 6, 6);
+      g.fillRect(0, 26, 6, 6);
+      g.fillRect(50, 26, 6, 6);
+      
+      // Door handles / latches
+      g.fillStyle(0x333344);
+      g.fillRect(8, 12, 12, 3);
+      g.fillRect(36, 12, 12, 3);
+      g.fillStyle(0x555566);
+      g.fillRect(9, 13, 10, 1);
+      g.fillRect(37, 13, 10, 1);
+      
+      // Hazard/reflective tape on corners
+      g.fillStyle(0xff6600);
+      g.fillRect(0, 2, 4, 8);
+      g.fillRect(52, 2, 4, 8);
+      g.fillRect(0, 22, 4, 8);
+      g.fillRect(52, 22, 4, 8);
+      
+      // Rust spots
+      g.fillStyle(0x884422, 0.4);
+      for (let i = 0; i < 8; i++) {
+        const rx = Phaser.Math.Between(10, 46);
+        const ry = Phaser.Math.Between(8, 24);
+        g.fillCircle(rx, ry, Phaser.Math.Between(1, 3));
+      }
+      
+      // Edge highlight
+      g.lineStyle(1, 0x9999aa, 0.3);
+      g.strokeRoundedRect(0, 0, 56, 32, 4);
+    });
+
+    // =========================================================================
+    // 15. OIL SLICK (50x40)
+    // =========================================================================
+    makeTexture('oil_slick', 50, 40, (g) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.15);
+      g.fillEllipse(25, 22, 44, 34);
+
+      // Base dark puddle
+      const grad = g.createLinearGradient(0, 0, 50, 40);
+      grad.addColorStop(0, '#0a0a0a');
+      grad.addColorStop(0.5, '#050505');
+      grad.addColorStop(1, '#0a0a0a');
+      g.fillStyle(grad);
+      g.fillEllipse(25, 20, 44, 34);
+
+      // Rainbow iridescence - multiple ellipses
+      const colors = [0xff0044, 0xff8800, 0xffff00, 0x00ff88, 0x0088ff, 0x8800ff];
+      for (let i = 0; i < colors.length; i++) {
+        const scale = 0.9 - i * 0.12;
+        g.fillStyle(colors[i], 0.15 - i * 0.02);
+        g.fillEllipse(25 + Math.sin(i) * 2, 20 + Math.cos(i) * 2, 44 * scale, 34 * scale);
+      }
+      
+      // Specular highlights
+      g.fillStyle(0xffffff, 0.08);
+      g.fillEllipse(18, 14, 12, 8);
+      g.fillStyle(0xffffff, 0.05);
+      g.fillEllipse(32, 24, 10, 6);
+      
+      // Edge shimmer
+      g.lineStyle(2, 0xffcc00, 0.2);
+      g.strokeEllipse(25, 20, 44, 34);
+      g.lineStyle(1, 0x00ffff, 0.15);
+      g.strokeEllipse(25, 20, 40, 30);
+    });
+
+    // =========================================================================
+    // 16. DEBRIS PILE (40x30)
+    // =========================================================================
+    makeTexture('debris', 40, 30, (g) => {
+      // Shadow
+      g.fillStyle(0x000000, 0.2);
+      g.fillEllipse(20, 17, 36, 22);
+
+      // Base pile - dark rubble
+      g.fillStyle(0x332211);
+      g.fillEllipse(20, 15, 36, 24);
+      
+      // Layered debris pieces
+      const debrisColors = [0x554433, 0x665544, 0x443322, 0x776655, 0x887766, 0x332211];
+      for (let i = 0; i < 12; i++) {
+        g.fillStyle(Phaser.Math.RND.pick(debrisColors));
+        const dx = Phaser.Math.Between(6, 34);
+        const dy = Phaser.Math.Between(5, 22);
+        const dw = Phaser.Math.Between(4, 14);
+        const dh = Phaser.Math.Between(3, 10);
+        g.fillRoundedRect(dx, dy, dw, dh, 2);
+      }
+      
+      // Metal scraps
+      g.fillStyle(0x666677);
+      g.fillRect(8, 10, 6, 3);
+      g.fillRect(26, 8, 8, 4);
+      g.fillRect(12, 18, 5, 5);
+      
+      // Broken glass / shiny bits
+      g.fillStyle(0x88aaff, 0.6);
+      g.fillCircle(15, 12, 2);
+      g.fillCircle(28, 9, 1.5);
+      g.fillCircle(22, 16, 2);
+      
+      // Oil stain
+      g.fillStyle(0x000000, 0.4);
+      g.fillEllipse(20, 22, 18, 8);
+      
+      // Highlight on top
+      g.fillStyle(0x776655, 0.3);
+      g.fillEllipse(18, 10, 20, 8);
+      
+      // Edge
+      g.lineStyle(1, 0x221100, 0.5);
+      g.strokeEllipse(20, 15, 36, 24);
+    });
+
+    // =========================================================================
+    // 17. FUEL CANISTER (25x25)
     // =========================================================================
     makeTexture('fuel', 25, 25, (g) => {
       // Shadow
