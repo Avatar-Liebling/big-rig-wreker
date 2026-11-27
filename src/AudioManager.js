@@ -337,6 +337,45 @@ export default class AudioManager {
     if (!this.engine || !this.ctx) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
     this.engine.suspended = false;
+    
+    // Recreate oscillators if they were stopped
+    if (this.engine.osc1.state === 'stopped') {
+      this.engine.osc1 = this.ctx.createOscillator();
+      this.engine.osc1.type = 'sawtooth';
+      this.engine.osc1.connect(this.engine.amp);
+      this.engine.osc1.start();
+      
+      this.engine.osc2 = this.ctx.createOscillator();
+      this.engine.osc2.type = 'square';
+      this.engine.osc2.connect(this.engine.amp);
+      this.engine.osc2.start();
+      
+      this.engine.osc3 = this.ctx.createOscillator();
+      this.engine.osc3.type = 'triangle';
+      this.engine.osc3.connect(this.engine.amp);
+      this.engine.osc3.start();
+      
+      this.engine.turbo = this.ctx.createOscillator();
+      this.engine.turbo.type = 'sine';
+      this.engine.turbo.connect(this.engine.turboGain).connect(this.master);
+      this.engine.turbo.start();
+      
+      this.engine.wobble = this.ctx.createOscillator();
+      this.engine.wobble.type = 'sine';
+      this.engine.wobble.frequency.value = 4;
+      this.engine.wobble.connect(this.engine.wobbleDepth).connect(this.engine.osc1.frequency);
+      this.engine.wobble.connect(this.engine.wobbleDepth).connect(this.engine.osc2.frequency);
+      this.engine.wobble.connect(this.engine.wobbleDepth).connect(this.engine.osc3.frequency);
+      this.engine.wobble.start();
+      
+      this.engine.wobble2 = this.ctx.createOscillator();
+      this.engine.wobble2.type = 'sine';
+      this.engine.wobble2.frequency.value = 1.8;
+      this.engine.wobble2.connect(this.engine.wobbleDetune2).connect(this.engine.osc1.detune);
+      this.engine.wobble2.connect(this.engine.wobbleDetune2).connect(this.engine.osc2.detune);
+      this.engine.wobble2.start();
+    }
+    
     this.engine.amp.gain.setTargetAtTime(this._engineTargetAmp(), this.ctx.currentTime, 0.12);
     this.engine.noiseGain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.12);
   }
@@ -348,7 +387,50 @@ export default class AudioManager {
     if (suspended) {
       this.engine.amp.gain.setTargetAtTime(0, t, 0.1);
       this.engine.noiseGain.gain.setTargetAtTime(0, t, 0.1);
+      // Stop oscillators to prevent any tone bleed
+      this.engine.osc1.stop();
+      this.engine.osc2.stop();
+      this.engine.osc3.stop();
+      this.engine.turbo.stop();
+      this.engine.wobble.stop();
+      this.engine.wobble2.stop();
     } else {
+      // Restart oscillators
+      this.engine.osc1 = this.ctx.createOscillator();
+      this.engine.osc1.type = 'sawtooth';
+      this.engine.osc1.connect(this.engine.amp);
+      this.engine.osc1.start();
+      
+      this.engine.osc2 = this.ctx.createOscillator();
+      this.engine.osc2.type = 'square';
+      this.engine.osc2.connect(this.engine.amp);
+      this.engine.osc2.start();
+      
+      this.engine.osc3 = this.ctx.createOscillator();
+      this.engine.osc3.type = 'triangle';
+      this.engine.osc3.connect(this.engine.amp);
+      this.engine.osc3.start();
+      
+      this.engine.turbo = this.ctx.createOscillator();
+      this.engine.turbo.type = 'sine';
+      this.engine.turbo.connect(this.engine.turboGain).connect(this.master);
+      this.engine.turbo.start();
+      
+      this.engine.wobble = this.ctx.createOscillator();
+      this.engine.wobble.type = 'sine';
+      this.engine.wobble.frequency.value = 4;
+      this.engine.wobble.connect(this.engine.wobbleDepth).connect(this.engine.osc1.frequency);
+      this.engine.wobble.connect(this.engine.wobbleDepth).connect(this.engine.osc2.frequency);
+      this.engine.wobble.connect(this.engine.wobbleDepth).connect(this.engine.osc3.frequency);
+      this.engine.wobble.start();
+      
+      this.engine.wobble2 = this.ctx.createOscillator();
+      this.engine.wobble2.type = 'sine';
+      this.engine.wobble2.frequency.value = 1.8;
+      this.engine.wobble2.connect(this.engine.wobbleDetune2).connect(this.engine.osc1.detune);
+      this.engine.wobble2.connect(this.engine.wobbleDetune2).connect(this.engine.osc2.detune);
+      this.engine.wobble2.start();
+      
       this.engine.amp.gain.setTargetAtTime(this._engineTargetAmp(), t, 0.12);
       this.engine.noiseGain.gain.setTargetAtTime(0.05, t, 0.12);
     }

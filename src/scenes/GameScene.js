@@ -451,7 +451,10 @@ export default class GameScene extends Phaser.Scene {
       fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '54px', color: '#ffcc00',
     }).setOrigin(0.5);
     const resume = this.makeMenuButton(W / 2, 230, 'RESUME', () => this.togglePause());
-    const quit = this.makeMenuButton(W / 2, 290, 'QUIT', () => this.scene.start('MenuScene'));
+    const quit = this.makeMenuButton(W / 2, 290, 'QUIT', () => {
+      this.game.audioManager?.stopEngine();
+      this.scene.start('MenuScene');
+    });
     this.pauseLayer.add([dim, title, resume, quit]);
   }
 
@@ -2081,5 +2084,10 @@ export default class GameScene extends Phaser.Scene {
         dailyComplete: this.dailyCompleted,
       });
     });
+  }
+
+  shutdown() {
+    // Stop engine audio when leaving this scene (quit to menu or game over)
+    this.game.audioManager?.stopEngine();
   }
 }
