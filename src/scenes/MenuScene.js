@@ -123,6 +123,7 @@ export default class MenuScene extends Phaser.Scene {
     this.input.on('pointerdown', () => {
       if (!this.audioInitialized && this.game.audioManager) {
         this.game.audioManager.init();
+        this.game.audioManager.resume();
         this.audioInitialized = true;
       }
     });
@@ -155,11 +156,13 @@ export default class MenuScene extends Phaser.Scene {
     });
     bg.on('pointerdown', () => {
       if (this.game.audioManager) {
+        if (!this.audioInitialized) {
+          this.game.audioManager.init();
+          this.game.audioManager.resume();
+          this.audioInitialized = true;
+        }
+        this.game.audioManager.resume();
         this.game.audioManager.play('menu_click');
-      }
-      if (!this.audioInitialized && this.game.audioManager) {
-        this.game.audioManager.init();
-        this.audioInitialized = true;
       }
       container.setScale(0.95);
       this.time.delayedCall(100, () => {

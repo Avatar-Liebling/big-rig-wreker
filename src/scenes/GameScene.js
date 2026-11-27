@@ -67,6 +67,8 @@ export default class GameScene extends Phaser.Scene {
     this.dailyCompleted = false;
     this.dailyGoals = this.generateDailyGoals();
     this.dailyProgress = { wrecks: 0, distance: 0, combo: 0, coins: 0, perfect: false };
+    // Track whether perfect was maintained throughout the run; reset when health drops.
+    this.dailyPerfectMaintained = true;
     
     // New: new vehicle types
     this.carTypes = ['car_red', 'car_blue', 'car_green', 'car_yellow', 'car_white', 'motorcycle', 'pickup', 'bus', 'sports_low', 'ambulance', 'firetruck', 'tanker'];
@@ -188,6 +190,17 @@ export default class GameScene extends Phaser.Scene {
       gravityY: 10,
     }).setDepth(8);
     
+    // Heat shimmer above exhaust (rising heat distortion)
+    this.heatShimmer = this.add.particles(0, 0, 'heat_shimmer', {
+      lifespan: { min: 200, max: 400 },
+      speedY: { min: -30, max: -10 },
+      scale: { start: 0.5, end: 0 },
+      alpha: { start: 0.3, end: 0 },
+      frequency: 80,
+      rotate: { min: -5, max: 5 },
+      gravityY: -20,
+    }).setDepth(9);
+    
     // Second exhaust layer - darker smoke
     this.exhaust2 = this.add.particles(0, 0, 'smoke_particle', {
       lifespan: { min: 600, max: 1000 },
@@ -199,6 +212,56 @@ export default class GameScene extends Phaser.Scene {
       tint: 0x111111,
       gravityY: 5,
     }).setDepth(7);
+
+    // Tire smoke emitters (one per rear wheel) - for burnouts/drifts
+    this.tireSmokeL = this.add.particles(0, 0, 'tire_smoke', {
+      lifespan: { min: 500, max: 1000 },
+      speedX: { min: -20, max: 20 },
+      speedY: { min: 10, max: 40 },
+      scale: { start: 0.8, end: 1.5 },
+      alpha: { start: 0.3, end: 0 },
+      frequency: 20,
+      emitting: false,
+      gravityY: 30,
+      rotate: { min: 0, max: 360 },
+    }).setDepth(9);
+    
+    this.tireSmokeR = this.add.particles(0, 0, 'tire_smoke', {
+      lifespan: { min: 500, max: 1000 },
+      speedX: { min: -20, max: 20 },
+      speedY: { min: 10, max: 40 },
+      scale: { start: 0.8, end: 1.5 },
+      alpha: { start: 0.3, end: 0 },
+      frequency: 20,
+      emitting: false,
+      gravityY: 30,
+      rotate: { min: 0, max: 360 },
+    }).setDepth(9);
+
+    // Road spray (wet road kick-up behind tires)
+    this.roadSprayL = this.add.particles(0, 0, 'rain_drop', {
+      lifespan: { min: 200, max: 400 },
+      speedX: { min: -30, max: 30 },
+      speedY: { min: 80, max: 150 },
+      scale: { start: 0.4, end: 0 },
+      alpha: { start: 0.5, end: 0 },
+      frequency: 30,
+      emitting: false,
+      gravityY: 100,
+      tint: 0xAADDFF,
+    }).setDepth(9);
+    
+    this.roadSprayR = this.add.particles(0, 0, 'rain_drop', {
+      lifespan: { min: 200, max: 400 },
+      speedX: { min: -30, max: 30 },
+      speedY: { min: 80, max: 150 },
+      scale: { start: 0.4, end: 0 },
+      alpha: { start: 0.5, end: 0 },
+      frequency: 30,
+      emitting: false,
+      gravityY: 100,
+      tint: 0xAADDFF,
+    }).setDepth(9);
 
     this.flames = this.add.particles(0, 0, 'spark_particle', {
       lifespan: { min: 150, max: 300 },
@@ -225,7 +288,13 @@ export default class GameScene extends Phaser.Scene {
 
     this.headlights = this.add.ellipse(this.player.x, this.player.y - 40, 70, 90, 0xffffcc, 0.08).setDepth(7);
     
-    // Headlight beams (dynamic)
+    // Volumetric headlight beams (using texture)
+    this.headlightBeamVolL = this.add.image(this.player.x - 18, this.player.y - 160, 'volumetric_cone')
+      .setOrigin(0.5, 1).setScale(0.6, 0.8).setAlpha(0.15).setDepth(6);
+    this.headlightBeamVolR = this.add.image(this.player.x + 18, this.player.y - 160, 'volumetric_cone')
+      .setOrigin(0.5, 1).setScale(0.6, 0.8).setAlpha(0.15).setDepth(6);
+    
+    // Headlight beams (dynamic triangle graphics - fallback)
     this.headlightBeamL = this.add.graphics().setDepth(6);
     this.headlightBeamR = this.add.graphics().setDepth(6);
     this.updateHeadlights();
@@ -236,7 +305,20 @@ export default class GameScene extends Phaser.Scene {
     const x = this.player.x;
     const y = this.player.y - 40;
     this.headlights.setPosition(x, y - 40);
-    // Left headlight beam forward
+    
+    // Update volumetric beams
+    if (this.headlightBeamVolL && this.headlightBeamVolR) {
+      this.headlightBeamVolL.setPosition(x - 18, y - 120);
+      this.headlightBeamVolL.setRotation(Phaser.Math.DegToRad(-90));
+      this.headlightBeamVolR.setPosition(x + 18, y - 120);
+      this.headlightBeamVolR.setRotation(Phaser.Math.DegToRad(-90));
+      // Pulse slightly
+      const pulse = 0.9 + Math.sin(this.time.now / 300) * 0.1;
+      this.headlightBeamVolL.setAlpha(0.15 * pulse);
+      this.headlightBeamVolR.setAlpha(0.15 * pulse);
+    }
+    
+    // Left headlight beam forward (graphics fallback)
     this.headlightBeamL.clear();
     this.headlightBeamL.fillStyle(0xffffcc, 0.08);
     this.headlightBeamL.fillTriangle(x - 18, y, x - 45, y - 110, x - 6, y - 110);
@@ -383,7 +465,10 @@ export default class GameScene extends Phaser.Scene {
       this.banner.setText(steps[i]);
       this.banner.setScale(0.6);
       this.tweens.add({ targets: this.banner, scale: 1.15, duration: 280, yoyo: true });
-      if (this.game.audioManager) this.game.audioManager.play(i === 3 ? 'go' : 'countdown');
+      if (this.game.audioManager) {
+        this.game.audioManager.resume();
+        this.game.audioManager.play(i === 3 ? 'go' : 'countdown');
+      }
       i += 1;
       if (i < steps.length) {
         this.time.delayedCall(700, tick);
@@ -391,7 +476,7 @@ export default class GameScene extends Phaser.Scene {
         this.time.delayedCall(500, () => {
           this.banner.setText('');
           this.started = true;
-          if (this.game.audioManager) this.game.audioManager.play('engine_idle', true);
+          this.game.audioManager?.startEngine();
         });
       }
     };
@@ -402,8 +487,8 @@ export default class GameScene extends Phaser.Scene {
     this.paused = !this.paused;
     this.pauseLayer.setVisible(this.paused);
     this.physics.world.isPaused = this.paused;
-    if (this.paused) this.game.audioManager?.stopLoop('engine_idle');
-    else if (this.started) this.game.audioManager?.play('engine_idle', true);
+    if (this.paused) this.game.audioManager?.setEngineSuspended(true);
+    else if (this.started) this.game.audioManager?.startEngine();
   }
 
   spawnCar() {
@@ -909,6 +994,7 @@ export default class GameScene extends Phaser.Scene {
 
     safe('handleInput', () => this.handleInput(dt));
     safe('updatePlayer', () => this.updatePlayer(dt));
+    safe('engineAudio', () => this.updateEngineAudio());
     safe('scrollWorld', () => this.scrollWorld(dt));
     safe('updateSpawns', () => this.updateSpawns(dt));
     safe('updateEntities', () => this.updateEntities(dt));
@@ -944,6 +1030,14 @@ export default class GameScene extends Phaser.Scene {
         this.nitroCharge = 0;
         this.nitroActive = 3.2;
         this.game.audioManager?.play('nitro');
+        
+        // Nitro activation screen effects
+        this.cameras.main.flash(100, 0, 200, 255, false);
+        this.time.timeScale = 1.2;
+        this.time.delayedCall(100, () => { this.time.timeScale = 1; });
+        
+        // Screen shake on nitro activation
+        this.cameras.main.shake(200, 0.01);
       } else {
         this.game.audioManager?.play('horn');
       }
@@ -982,8 +1076,40 @@ export default class GameScene extends Phaser.Scene {
 
     this.exhaust.setPosition(this.trailer.x, this.trailer.y + 22);
     this.exhaust2.setPosition(this.trailer.x, this.trailer.y + 26);
+    this.heatShimmer.setPosition(this.trailer.x, this.trailer.y + 18);
     this.flames.setPosition(this.trailer.x, this.trailer.y + 18);
     this.updateHeadlights();
+
+    // Tire smoke & road spray - emit when accelerating hard or turning
+    const isAccelerating = this.cursors.shift?.isDown || this.nitroActive > 0;
+    const isTurning = Math.abs(this.player.body?.velocity.x || 0) > 50;
+    const isWet = this.rain;
+    
+    if (isAccelerating || (isTurning && this.speed > 150)) {
+      this.tireSmokeL.emitting = true;
+      this.tireSmokeR.emitting = true;
+      // Position at rear wheels
+      const trailerX = this.trailer.x;
+      const trailerY = this.trailer.y + 30;
+      this.tireSmokeL.setPosition(trailerX - 20, trailerY);
+      this.tireSmokeR.setPosition(trailerX + 20, trailerY);
+    } else {
+      this.tireSmokeL.emitting = false;
+      this.tireSmokeR.emitting = false;
+    }
+    
+    // Road spray when wet
+    if (isWet && this.speed > 100) {
+      this.roadSprayL.emitting = true;
+      this.roadSprayR.emitting = true;
+      const trailerX = this.trailer.x;
+      const trailerY = this.trailer.y + 30;
+      this.roadSprayL.setPosition(trailerX - 20, trailerY);
+      this.roadSprayR.setPosition(trailerX + 20, trailerY);
+    } else {
+      this.roadSprayL.emitting = false;
+      this.roadSprayR.emitting = false;
+    }
 
     this.distance += this.speed * dt * 0.08;
     this.dailyProgress.distance = Math.floor(this.distance);
@@ -1090,6 +1216,31 @@ export default class GameScene extends Phaser.Scene {
         distance: Math.floor(this.distance)
       });
     }
+  }
+
+  /**
+   * Feed the live engine graph. Maps the truck's speed + input state onto a
+   * normalised rpm (0..1) and a load figure (0..1), so the engine idles low,
+   * rises through gears under throttle, and barks on gear changes.
+   */
+  updateEngineAudio() {
+    const am = this.game.audioManager;
+    if (!am || !am.ctx) return;
+
+    const span = Math.max(1, this.maxSpeed - this.minSpeed);
+    const speedNorm = Math.max(0, Math.min(1, (this.speed - this.minSpeed) / span));
+
+    // Throttle: holding up/W is asking the engine to work, braking unloads it.
+    const up = this.cursors.up.isDown || this.keys.W.isDown;
+    const down = this.cursors.down.isDown || this.keys.S.isDown;
+    let load = (up ? 0.85 : 0.35) - (down ? 0.5 : 0);
+    if (this.nitroActive > 0) load = 1;
+    load = Math.max(0, Math.min(1, load));
+
+    // rpm normalisation: base throttle raises rpm, so the engine "revs in gear"
+    // rather than simply tracking road speed.
+    let rpmNorm = Math.min(1, speedNorm * 0.78 + (up ? 0.22 : 0) + (this.nitroActive > 0 ? 0.25 : 0));
+    am.updateEngine(rpmNorm, load);
   }
 
   scrollWorld(dt) {
@@ -1422,10 +1573,24 @@ export default class GameScene extends Phaser.Scene {
     this.floatText(e.x, e.y - 10, '+' + points, '#ffcc00');
     if (this.combo > 2) this.comboText.setText('x' + this.combo + ' COMBO!');
     this.game.audioManager?.play(e.kind === 'police' ? 'wreck' : 'crash');
+    
+    // Hit pause (frame freeze) for impact feel
+    this.time.timeScale = 0.3;
+    this.time.delayedCall(50, () => { this.time.timeScale = 1; });
+    
     this.cameras.main.shake(180, 0.008);
     this.burst(e.x, e.y, 'explosion_particle', 16);
     this.burst(e.x, e.y, 'spark_particle', 10);
     
+    // NEW: Debris and glass shards
+    this.burst(e.x, e.y, 'debris_particle', 12);
+    this.burst(e.x, e.y, 'glass_shard', 8);
+    // Spark shower
+    this.burst(e.x, e.y, 'spark_shower', 15);
+    
+    // Screen flash for heavy impact
+    this.cameras.main.flash(100, 255, 100, 50, false);
+
     // Analytics
     if (this.analytics) {
       this.analytics.trackWreck(e.vehicleType || e.kind, points, this.combo);
@@ -1519,12 +1684,34 @@ export default class GameScene extends Phaser.Scene {
   }
 
   damage(amount) {
+    if (this.shieldTime > 0) {
+      amount *= 0.33;
+    }
+    const hadFullHealth = this.health === 100;
     this.health -= amount;
+    this.health = Math.max(0, this.health);
+    // If we had full health and now don't, perfect run is broken
+    if (hadFullHealth && this.health < 100) this.dailyPerfectMaintained = false;
     this.floatText(this.player.x, this.player.y - 30, '-' + amount, '#ff4444');
     this.player.setTint(0xff6666);
     this.time.delayedCall(120, () => {
       if (this.shieldTime <= 0) this.player.clearTint();
     });
+    
+    // Screen effects on damage
+    const hpRatio = this.health / 100;
+    if (hpRatio < 0.3) {
+      // Vignette pulse
+      this.cameras.main.flash(200, 255, 0, 0, false);
+      this.time.timeScale = 0.5;
+      this.time.delayedCall(80, () => { this.time.timeScale = 1; });
+    } else {
+      this.cameras.main.flash(100, 255, 100, 50, false);
+      this.time.timeScale = 0.7;
+      this.time.delayedCall(40, () => { this.time.timeScale = 1; });
+    }
+    this.cameras.main.shake(150, 0.006);
+
     if (this.health <= 0) this.gameOver();
   }
 
@@ -1633,13 +1820,39 @@ export default class GameScene extends Phaser.Scene {
       this.rainEmitter.emitting = this.rain;
       this.rainLayer.setFillStyle(0x0a1424, this.rain ? 0.28 : 0);
     }
+    
+    // Puddle ripples during rain
+    if (this.rain && Math.random() < 0.15) {
+      const x = Phaser.Math.Between(0, W);
+      const y = Phaser.Math.Between(0, H);
+      this.burst(x, y, 'puddle_ripple', 1);
+    }
+    
+    // Speed lines effect for nitro / high speed
+    if (!this.speedLines) {
+      this.speedLines = this.add.graphics().setDepth(45).setScrollFactor(0);
+    }
+    this.speedLines.clear();
+    const speedRatio = Phaser.Math.Clamp((this.speed - this.minSpeed) / (this.maxSpeed - this.minSpeed), 0, 1);
+    const nitroActive = this.nitroActive > 0;
+    if (nitroActive || speedRatio > 0.85) {
+      const intensity = nitroActive ? 1 : (speedRatio - 0.85) / 0.15;
+      const numLines = Math.floor(12 * intensity);
+      this.speedLines.lineStyle(1.5 * intensity, 0xFFFFFF, 0.3 * intensity);
+      for (let i = 0; i < numLines; i++) {
+        const x = Phaser.Math.Between(0, W);
+        const len = 60 + 100 * intensity;
+        const y = Phaser.Math.Between(0, H);
+        this.speedLines.lineBetween(x, y, x, y + len);
+      }
+    }
   }
 
   gameOver() {
     if (this.health > 0) return;
     this.health = 0;
     this.started = false;
-    this.game.audioManager?.stopAll();
+    this.game.audioManager?.stopEngine();
     this.game.audioManager?.play('explosion');
     this.cameras.main.shake(400, 0.02);
     if (this.player && this.player.active) {

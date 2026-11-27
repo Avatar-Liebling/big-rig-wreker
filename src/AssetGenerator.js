@@ -1243,6 +1243,101 @@ export default class AssetGenerator {
     });
 
     // =========================================================================
+    // NEW: Enhanced particle textures for visual showcase
+    // =========================================================================
+
+    // DEBRIS PARTICLE (8x8) — metal/glass shards from crashes
+    makeTexture('debris_particle', 8, 8, (g) => {
+      // Random angular shard shape
+      const points = [];
+      const cx = 4, cy = 4;
+      const numPoints = 5 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < numPoints; i++) {
+        const angle = (i / numPoints) * Math.PI * 2 + Math.random() * 0.3;
+        const radius = 2 + Math.random() * 2;
+        points.push(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
+      }
+      g.fillStyle(0x888888, 0.9);
+      g.fillPoints(points, true);
+      g.fillStyle(0xAAAAAA, 0.5);
+      g.fillPoints(points.map((v, i) => i % 2 === 0 ? v * 0.7 + cx * 0.3 : v * 0.7 + cy * 0.3), true);
+    });
+
+    // GLASS SHARD (6x10) — thin elongated glass pieces
+    makeTexture('glass_shard', 6, 10, (g) => {
+      g.fillStyle(0xAADDFF, 0.7);
+      g.fillTriangle(3, 10, 0, 0, 6, 0);
+      g.fillStyle(0xCCEEFF, 0.9);
+      g.fillTriangle(3, 8, 1, 2, 5, 2);
+      g.fillStyle(0xFFFFFF, 0.5);
+      g.fillTriangle(3, 6, 2, 4, 4, 4);
+    });
+
+    // TIRE SMOKE PARTICLE (16x16) — larger, more realistic smoke puff
+    makeTexture('tire_smoke', 16, 16, (g) => {
+      g.fillStyle(0x555555, 0.08);
+      g.fillCircle(8, 8, 8);
+      g.fillStyle(0x666666, 0.12);
+      g.fillCircle(8, 8, 6);
+      g.fillStyle(0x777777, 0.15);
+      g.fillCircle(8, 8, 4);
+      g.fillStyle(0x888888, 0.1);
+      g.fillCircle(7, 7, 2);
+    });
+
+    // HEAT SHIMMER (12x24) — rising heat distortion for exhaust
+    makeTexture('heat_shimmer', 12, 24, (g) => {
+      // Vertical gradient - hottest at bottom
+      for (let y = 0; y < 24; y++) {
+        const alpha = 0.04 * (1 - y / 24);
+        const hue = y < 8 ? 0xFF4400 : (y < 16 ? 0xFF8800 : 0xFFAA00);
+        g.fillStyle(hue, alpha);
+        g.fillRect(2, y, 8, 1);
+      }
+    });
+
+    // PUDDLE RIPPLE (24x24) — expanding ring for rain impacts
+    makeTexture('puddle_ripple', 24, 24, (g) => {
+      g.lineStyle(1.5, 0x88CCFF, 0.4);
+      g.strokeCircle(12, 12, 10);
+      g.lineStyle(1, 0xAADDFF, 0.25);
+      g.strokeCircle(12, 12, 6);
+      g.lineStyle(0.5, 0xCCEEFF, 0.15);
+      g.strokeCircle(12, 12, 3);
+    });
+
+    // VOLUMETRIC CONE (60x120) — headlight beam texture
+    makeTexture('volumetric_cone', 60, 120, (g) => {
+      // Gradient from bright near source to transparent at distance
+      for (let y = 0; y < 120; y++) {
+        const alpha = 0.12 * (1 - y / 120) * (1 - y / 120);
+        const width = 8 + (y / 120) * 44;
+        const x = 30 - width / 2;
+        g.fillStyle(0xFFFFCC, alpha);
+        g.fillRect(x, y, width, 1);
+      }
+      // Dust motes in beam
+      for (let i = 0; i < 12; i++) {
+        const px = 15 + Math.random() * 30;
+        const py = Math.random() * 120;
+        const size = 0.5 + Math.random() * 1;
+        const alpha = 0.05 + Math.random() * 0.1;
+        g.fillStyle(0xFFFFEE, alpha);
+        g.fillCircle(px, py, size);
+      }
+    });
+
+    // SPARK SHOWER (8x8) — for grinding/crash sparks
+    makeTexture('spark_shower', 8, 8, (g) => {
+      for (let i = 0; i < 6; i++) {
+        const x = 1 + Math.random() * 6;
+        const y = 1 + Math.random() * 6;
+        const color = [0xFF4400, 0xFF8800, 0xFFCC00, 0xFFFFAA, 0xFFFFFF][Math.floor(Math.random() * 5)];
+        g.fillStyle(color, 0.8);
+        g.fillCircle(x, y, 0.5 + Math.random() * 1);
+      }
+    });
+    // =========================================================================
     // 24. BUILDING 1 (60x80)
     // =========================================================================
     makeTexture('building_1', 60, 80, (g) => {
