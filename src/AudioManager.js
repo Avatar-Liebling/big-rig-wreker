@@ -22,7 +22,7 @@ export default class AudioManager {
   constructor() {
     this.ctx = null;
     this.buffers = {};
-    this.volume = 0.4;
+    this.volume = 0.25;
     this.muted = false;
     this.loops = {};
     this._initialized = false;
