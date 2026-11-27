@@ -1759,77 +1759,124 @@ export default class GameScene extends Phaser.Scene {
     if (this.combo > 2) this.comboText.setText('x' + this.combo + ' COMBO!');
     this.game.audioManager?.play(e.kind === 'police' ? 'wreck' : 'crash');
     
-    // Hit pause (frame freeze) for impact feel - LONGER
-    this.time.timeScale = 0.2;
-    this.time.delayedCall(80, () => { this.time.timeScale = 1; });
+    // Hit pause (frame freeze) for impact feel
+    this.time.timeScale = 0.15;
+    this.time.delayedCall(100, () => { this.time.timeScale = 1; });
     
-    // BIGGER camera shake
-    this.cameras.main.shake(250, 0.015);
+    // Initial impact camera shake
+    this.cameras.main.shake(150, 0.01);
     
-    // MASSIVE explosion particles
-    this.burst(e.x, e.y, 'explosion_particle', 30);
-    this.burst(e.x, e.y, 'explosion_particle_large', 12);
-    this.burst(e.x, e.y, 'spark_particle', 20);
-    this.burst(e.x, e.y, 'spark_particle_large', 10);
+    // STEP 1: Push car away briefly (knockback) - IMMEDIATE
+    const knockbackAngle = e.angle + Phaser.Math.Between(-120, 120);
+    const knockbackDist = Phaser.Math.Between(80, 150);
+    const knockbackX = e.x + Math.cos(knockbackAngle * Math.PI / 180) * knockbackDist;
+    const knockbackY = e.y + Math.sin(knockbackAngle * Math.PI / 180) * knockbackDist;
     
-    // Debris and glass shards - MORE
-    this.burst(e.x, e.y, 'debris_particle', 25);
-    this.burst(e.x, e.y, 'glass_shard', 18);
-    this.burst(e.x, e.y, 'metal_shard', 15);
-    // Spark shower
-    this.burst(e.x, e.y, 'spark_shower', 25);
-    this.burst(e.x, e.y, 'spark_shower_white', 15);
+    // Small debris/sparks at impact point
+    this.burst(e.x, e.y, 'spark_particle', 15);
+    this.burst(e.x, e.y, 'spark_shower', 10);
+    this.burst(e.x, e.y, 'debris_particle', 8);
+    this.burst(e.x, e.y, 'glass_shard', 6);
     
-    // Shockwave ring effect
-    this.burst(e.x, e.y, 'shockwave_ring', 1);
-    this.burst(e.x, e.y, 'shockwave_ring', 1);
+    // Screen flash on impact
+    this.cameras.main.flash(80, 255, 200, 50, false);
     
-    // Directional debris cones
-    this.burstCone(e.x, e.y, 'debris_particle', 12, e.angle - 90, 60);
-    this.burstCone(e.x, e.y, 'debris_particle', 12, e.angle + 90, 60);
-    
-    // Smoke plumes
-    this.burst(e.x, e.y, 'smoke_plume', 8);
-    this.burst(e.x, e.y, 'black_smoke', 6);
-    
-    // Screen flash for heavy impact - MORE INTENSE
-    this.cameras.main.flash(150, 255, 150, 50, false);
-    this.time.delayedCall(50, () => {
-      this.cameras.main.flash(100, 255, 255, 200, false);
-    });
-
-    // Analytics
-    if (this.analytics) {
-      this.analytics.trackWreck(e.vehicleType || e.kind, points, this.combo);
-      this.analytics.trackScore(this.score);
-    }
-    
-    // More dramatic car destruction - flies apart
-    const flyAngle = e.angle + Phaser.Math.Between(-150, 150);
-    const flyDist = Phaser.Math.Between(150, 300);
-    const flyX = e.x + Math.cos(flyAngle * Math.PI / 180) * flyDist;
-    const flyY = e.y + Math.sin(flyAngle * Math.PI / 180) * flyDist;
-    
+    // Knockback tween - car gets pushed away
     this.tweens.add({
       targets: e,
-      angle: e.angle + Phaser.Math.Between(-720, 720), // Multiple spins
-      x: flyX,
-      y: flyY,
-      alpha: 0,
-      scale: 0.3,
-      duration: 800,
+      x: knockbackX,
+      y: knockbackY,
+      angle: e.angle + Phaser.Math.Between(-360, 360),
+      scale: 0.8,
+      duration: 300,
       ease: 'Power2',
-      onComplete: () => e.destroy(),
-    });
-    
-    // Secondary explosion after a moment
-    this.time.delayedCall(200, () => {
-      if (this.scene && this.active) {
-        this.burst(e.x, e.y, 'explosion_particle', 15);
-        this.burst(e.x, e.y, 'spark_particle', 10);
-        this.burst(e.x, e.y, 'smoke_plume', 6);
+      onComplete: () => {
+        // STEP 2: MASSIVE FIERY EXPLOSION at car's new position
+        this.massiveExplosion(e.x, e.y);
+        
+        // STEP 3: Destroy car after explosion
+        this.time.delayedCall(400, () => {
+          if (e && e.scene && !e.destroyed) {
+            e.destroy();
+          }
+        });
       }
     });
+  }
+
+  // Separate massive explosion function for clarity
+  massiveExplosion(x, y) {
+    // Big camera shake for explosion
+    this.cameras.main.shake(300, 0.02);
+    
+    // MASSIVE firey explosion particles
+    this.burst(x, y, 'explosion_particle', 40);
+    this.burst(x, y, 'explosion_particle_large', 20);
+    this.burst(x, y, 'explosion_particle', 30); // Second wave
+    this.time.delayedCall(50, () => {
+      this.burst(x, y, 'explosion_particle_large', 15);
+    });
+    
+    // Fire/ember particles
+    this.burst(x, y, 'spark_particle', 30);
+    this.burst(x, y, 'spark_particle_large', 20);
+    this.burst(x, y, 'spark_shower', 30);
+    this.burst(x, y, 'spark_shower_white', 20);
+    
+    // Rising fire particles
+    this.burst(x, y, 'fire_ember', 25);
+    this.time.delayedCall(100, () => {
+      this.burst(x, y, 'fire_ember', 20);
+    });
+    
+    // Heavy debris flying outward
+    this.burst(x, y, 'debris_particle', 30);
+    this.burst(x, y, 'metal_shard', 20);
+    this.burst(x, y, 'glass_shard', 15);
+    
+    // Directional debris cones - more dramatic
+    this.burstCone(x, y, 'debris_particle', 18, 0, 80);
+    this.burstCone(x, y, 'metal_shard', 12, 90, 60);
+    this.burstCone(x, y, 'debris_particle', 18, 180, 80);
+    this.burstCone(x, y, 'metal_shard', 12, 270, 60);
+    
+    // Shockwave rings
+    this.burst(x, y, 'shockwave_ring', 1);
+    this.time.delayedCall(80, () => {
+      this.burst(x, y, 'shockwave_ring', 1);
+    });
+    
+    // Thick smoke plumes rising
+    this.burst(x, y, 'smoke_plume', 12);
+    this.burst(x, y, 'black_smoke', 10);
+    this.time.delayedCall(150, () => {
+      this.burst(x, y, 'smoke_plume', 8);
+      this.burst(x, y, 'black_smoke', 6);
+    });
+    
+    // Screen flashes - intense fire colors
+    this.cameras.main.flash(120, 255, 100, 0, false);
+    this.time.delayedCall(60, () => {
+      this.cameras.main.flash(100, 255, 200, 50, false);
+    });
+    this.time.delayedCall(120, () => {
+      this.cameras.main.flash(80, 255, 255, 200, false);
+    });
+    
+    // Secondary explosions around the main one
+    for (let i = 0; i < 4; i++) {
+      const angle = (i / 4) * Math.PI * 2;
+      const dist = Phaser.Math.Between(30, 60);
+      const sx = x + Math.cos(angle) * dist;
+      const sy = y + Math.sin(angle) * dist;
+      this.time.delayedCall(100 + i * 80, () => {
+        if (this.scene && this.active) {
+          this.burst(sx, sy, 'explosion_particle', 12);
+          this.burst(sx, sy, 'spark_particle', 8);
+          this.burst(sx, sy, 'smoke_plume', 4);
+        }
+      });
+    }
   }
 
   collect(e) {
@@ -1952,6 +1999,7 @@ export default class GameScene extends Phaser.Scene {
       metal_shard: { lifespan: 1000, speed: { min: 100, max: 400 }, scale: { start: 1.0, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 80, rotate: { min: 0, max: 360 }, blendMode: 'ADD' },
       glass_shard: { lifespan: 600, speed: { min: 80, max: 300 }, scale: { start: 0.8, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 150, rotate: { min: 0, max: 360 }, blendMode: 'ADD' },
       spark_shower: { lifespan: 500, speed: { min: 100, max: 400 }, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 50, blendMode: 'ADD' },
+      fire_ember: { lifespan: 800, speed: { min: 20, max: 150 }, speedY: { min: -100, max: -20 }, scale: { start: 1.2, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: -30, blendMode: 'ADD' },
       shockwave_ring: { lifespan: 400, speed: { min: 0, max: 0 }, scale: { start: 0.5, end: 3.0 }, alpha: { start: 0.8, end: 0 }, blendMode: 'ADD', quantity: 1 },
       smoke_plume: { lifespan: 1200, speed: { min: 10, max: 40 }, speedY: { min: -80, max: -30 }, scale: { start: 1.5, end: 3.0 }, alpha: { start: 0.4, end: 0 }, gravityY: -20, blendMode: 'NORMAL' },
       black_smoke: { lifespan: 1500, speed: { min: 5, max: 20 }, speedY: { min: -60, max: -20 }, scale: { start: 2.0, end: 4.0 }, alpha: { start: 0.5, end: 0 }, gravityY: -10, tint: 0x111111, blendMode: 'NORMAL' },

@@ -1438,6 +1438,25 @@ export default class AssetGenerator {
       g.fillEllipse(16, 4, 12, 12);
     });
 
+    // FIRE EMBER (8x8) — glowing fire embers for fiery explosions
+    makeTexture('fire_ember', 8, 8, (g) => {
+      // Outer glow - deep red
+      g.fillStyle(0xFF2200, 0.4);
+      g.fillCircle(4, 4, 4);
+      // Orange-red core
+      g.fillStyle(0xFF5500, 0.8);
+      g.fillCircle(4, 4, 3);
+      // Bright orange
+      g.fillStyle(0xFF8800, 1.0);
+      g.fillCircle(4, 4, 2);
+      // Yellow-white hot center
+      g.fillStyle(0xFFCC00, 1.0);
+      g.fillCircle(4, 4, 1.2);
+      // Tiny white hot spot
+      g.fillStyle(0xFFFFFF, 1.0);
+      g.fillCircle(4, 4, 0.5);
+    });
+
     // =========================================================================
     // 24. BUILDING 1 (60x80)
     // =========================================================================
