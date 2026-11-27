@@ -1987,6 +1987,21 @@ export default class GameScene extends Phaser.Scene {
     if (this.health <= 0) this.gameOver();
   }
 
+  // Radial / ring / cone entry points used by collisions and explosions.
+  // They share the proven burst emitter so a missing method cannot throw
+  // mid-collision and abort the game-over transition.
+  emitRadial(x, y, key, count, _overrides) {
+    this.burst(x, y, key, count);
+  }
+
+  emitRing(x, y, key, count, _overrides) {
+    this.burst(x, y, key, Math.max(1, count || 1));
+  }
+
+  emitCone(x, y, key, count, centerAngleDeg, spreadDeg) {
+    this.burstCone(x, y, key, count, centerAngleDeg, spreadDeg);
+  }
+
   burst(x, y, key, count) {
     // Adjust parameters based on particle type for better visibility
     const params = {

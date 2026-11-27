@@ -51,9 +51,9 @@ export default class GameOverScene extends Phaser.Scene {
     overlay.setDepth(1);
 
     // "GAME OVER" text
-    const gameOverText = this.add.text(width / 2, 60, 'GAME OVER', {
+    const gameOverText = this.add.text(width / 2, 42, 'GAME OVER', {
       fontFamily: 'Impact, Arial Black, sans-serif',
-      fontSize: '56px',
+      fontSize: '48px',
       color: '#ff2200',
       stroke: '#000000',
       strokeThickness: 8,
@@ -86,13 +86,13 @@ export default class GameOverScene extends Phaser.Scene {
     const highScore = Math.max(savedHigh, this.finalScore);
 
     // Score display
-    const scoreLabel = this.add.text(width / 2, 125, 'FINAL SCORE', {
+    const scoreLabel = this.add.text(width / 2, 92, 'FINAL SCORE', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '16px',
       color: '#aaaaaa',
     }).setOrigin(0.5).setDepth(2);
 
-    const scoreText = this.add.text(width / 2, 155, this.finalScore.toLocaleString(), {
+    const scoreText = this.add.text(width / 2, 120, this.finalScore.toLocaleString(), {
       fontFamily: 'Impact, Arial Black, sans-serif',
       fontSize: '42px',
       color: '#ffcc00',
@@ -114,7 +114,7 @@ export default class GameOverScene extends Phaser.Scene {
 
     // New high score flash
     if (isNewHighScore) {
-      const newHSText = this.add.text(width / 2, 190, '★ NEW HIGH SCORE! ★', {
+      const newHSText = this.add.text(width / 2, 150, '★ NEW HIGH SCORE! ★', {
         fontFamily: 'Impact, Arial Black, sans-serif',
         fontSize: '22px',
         color: '#ffdd00',
@@ -133,14 +133,14 @@ export default class GameOverScene extends Phaser.Scene {
     }
 
     // High score display
-    this.add.text(width / 2, isNewHighScore ? 218 : 195, 'HIGH SCORE: ' + highScore.toLocaleString(), {
+    this.add.text(width / 2, isNewHighScore ? 174 : 152, 'HIGH SCORE: ' + highScore.toLocaleString(), {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
       color: '#888888',
     }).setOrigin(0.5).setDepth(2);
 
     // Daily challenge status
-    let statsY = isNewHighScore ? 255 : 230;
+    let statsY = isNewHighScore ? 200 : 178;
     if (this.dailyComplete) {
       this.add.text(width / 2, statsY, '★ DAILY CHALLENGE COMPLETE! +5000 ★', {
         fontFamily: 'Impact, Arial Black, sans-serif',
@@ -194,7 +194,7 @@ export default class GameOverScene extends Phaser.Scene {
     }
 
     // Buttons - placed with consistent spacing below the stats panel
-    const buttonsY = panelY + panelH / 2 + 30;
+    const buttonsY = Math.min(panelY + panelH / 2 + 28, height - 36);
     this.createButton(width / 2 - 100, buttonsY, 'PLAY AGAIN', () => {
       this.cameras.main.fadeOut(400, 0, 0, 0);
       this.cameras.main.once('camerafadeoutcomplete', () => {
