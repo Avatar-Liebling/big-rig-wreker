@@ -1571,6 +1571,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // --- PASS 3: collision detection with player ---
+    console.log('UPDATE ENTITIES PASS 3:', this.entities.length, 'entities, player at', this.player.x, this.player.y);
     for (let i = this.entities.length - 1; i >= 0; i--) {
       const e = this.entities[i];
       if (!e || !e.active || e.wrecked || e.collected || !e.scene || e.destroyed) continue;
@@ -1628,6 +1629,10 @@ export default class GameScene extends Phaser.Scene {
 
     // Check player collision
     const playerHit = !(pRight < eLeft || pLeft > eRight || pBottom < eTop || pTop > eBottom);
+    
+    if (playerHit && entity.kind === 'car') {
+      console.log('CHECK COLLISION TRUE:', entity.vehicleType, 'player bounds:', pLeft, pRight, pTop, pBottom, 'entity bounds:', eLeft, eRight, eTop, eBottom);
+    }
 
     // Trailer bounds (centered on trailer) - optional, player collision still works without trailer
     let trailerHit = false;
@@ -1647,6 +1652,9 @@ export default class GameScene extends Phaser.Scene {
   }
 
   resolveHit(e) {
+    if (e.kind === 'car') {
+      console.log('CAR COLLISION!', e.vehicleType, 'at', e.x, e.y, 'player at', this.player.x, this.player.y);
+    }
     if (e.kind === 'power') {
       this.collect(e);
       return;
