@@ -88,6 +88,14 @@ export default class GameScene extends Phaser.Scene {
     this.bossQueued = false;
     this.bossRamCooldown = 0;
     
+    // Distance-based speed progression
+    this.distanceSpeedBonus = 0;
+    this.lastSpeedBonusDistance = 0;
+    
+    // Reward system
+    this.totalScoreEarned = 0;
+    this.levelUpRewards = [];
+    
     // Analytics reference
     this.analytics = this.game.analytics;
 
@@ -178,25 +186,25 @@ export default class GameScene extends Phaser.Scene {
     this.playerBounds = { width: 70, height: 34 };
     this.trailerBounds = { width: 62, height: 32 };
 
-    // Enhanced exhaust with multiple layers
+    // Enhanced exhaust with multiple layers - MORE VISIBLE
     this.exhaust = this.add.particles(0, 0, 'smoke_particle', {
       lifespan: { min: 400, max: 800 },
       speed: { min: 15, max: 50 },
       speedY: { min: 20, max: 60 },
-      scale: { start: 0.6, end: 0 },
-      alpha: { start: 0.4, end: 0 },
-      frequency: 50,
+      scale: { start: 0.8, end: 0 },
+      alpha: { start: 0.6, end: 0 },
+      frequency: 30,
       rotate: { min: 0, max: 360 },
       gravityY: 10,
     }).setDepth(8);
     
-    // Heat shimmer above exhaust (rising heat distortion)
+    // Heat shimmer above exhaust (rising heat distortion) - MORE VISIBLE
     this.heatShimmer = this.add.particles(0, 0, 'heat_shimmer', {
       lifespan: { min: 200, max: 400 },
       speedY: { min: -30, max: -10 },
-      scale: { start: 0.5, end: 0 },
-      alpha: { start: 0.3, end: 0 },
-      frequency: 80,
+      scale: { start: 0.7, end: 0 },
+      alpha: { start: 0.5, end: 0 },
+      frequency: 50,
       rotate: { min: -5, max: 5 },
       gravityY: -20,
     }).setDepth(9);
@@ -206,20 +214,20 @@ export default class GameScene extends Phaser.Scene {
       lifespan: { min: 600, max: 1000 },
       speed: { min: 5, max: 25 },
       speedY: { min: 10, max: 40 },
-      scale: { start: 0.8, end: 0 },
-      alpha: { start: 0.2, end: 0 },
-      frequency: 30,
+      scale: { start: 1.0, end: 0 },
+      alpha: { start: 0.4, end: 0 },
+      frequency: 20,
       tint: 0x111111,
       gravityY: 5,
     }).setDepth(7);
 
-    // Tire smoke emitters (one per rear wheel) - for burnouts/drifts
+    // Tire smoke emitters (one per rear wheel) - for burnouts/drifts - MORE VISIBLE
     this.tireSmokeL = this.add.particles(0, 0, 'tire_smoke', {
       lifespan: { min: 500, max: 1000 },
       speedX: { min: -20, max: 20 },
       speedY: { min: 10, max: 40 },
-      scale: { start: 0.8, end: 1.5 },
-      alpha: { start: 0.3, end: 0 },
+      scale: { start: 1.0, end: 1.8 },
+      alpha: { start: 0.5, end: 0 },
       frequency: 20,
       emitting: false,
       gravityY: 30,
@@ -230,34 +238,34 @@ export default class GameScene extends Phaser.Scene {
       lifespan: { min: 500, max: 1000 },
       speedX: { min: -20, max: 20 },
       speedY: { min: 10, max: 40 },
-      scale: { start: 0.8, end: 1.5 },
-      alpha: { start: 0.3, end: 0 },
+      scale: { start: 1.0, end: 1.8 },
+      alpha: { start: 0.5, end: 0 },
       frequency: 20,
       emitting: false,
       gravityY: 30,
       rotate: { min: 0, max: 360 },
     }).setDepth(9);
 
-    // Road spray (wet road kick-up behind tires)
-    this.roadSprayL = this.add.particles(0, 0, 'rain_drop', {
+    // Road spray (wet road kick-up behind tires) - MORE VISIBLE
+    this.roadSprayL = this.add.particles(0, 0, 'puddle_ripple', {
       lifespan: { min: 200, max: 400 },
       speedX: { min: -30, max: 30 },
       speedY: { min: 80, max: 150 },
-      scale: { start: 0.4, end: 0 },
-      alpha: { start: 0.5, end: 0 },
-      frequency: 30,
+      scale: { start: 0.6, end: 0 },
+      alpha: { start: 0.7, end: 0 },
+      frequency: 20,
       emitting: false,
       gravityY: 100,
       tint: 0xAADDFF,
     }).setDepth(9);
     
-    this.roadSprayR = this.add.particles(0, 0, 'rain_drop', {
+    this.roadSprayR = this.add.particles(0, 0, 'puddle_ripple', {
       lifespan: { min: 200, max: 400 },
       speedX: { min: -30, max: 30 },
       speedY: { min: 80, max: 150 },
-      scale: { start: 0.4, end: 0 },
-      alpha: { start: 0.5, end: 0 },
-      frequency: 30,
+      scale: { start: 0.6, end: 0 },
+      alpha: { start: 0.7, end: 0 },
+      frequency: 20,
       emitting: false,
       gravityY: 100,
       tint: 0xAADDFF,
@@ -267,7 +275,7 @@ export default class GameScene extends Phaser.Scene {
       lifespan: { min: 150, max: 300 },
       speedY: { min: 100, max: 220 },
       speedX: { min: -30, max: 30 },
-      scale: { start: 1, end: 0 },
+      scale: { start: 1.2, end: 0 },
       tint: [0xffaa00, 0xff4400, 0xffff88, 0xff6600],
       frequency: 20,
       emitting: false,
@@ -275,11 +283,11 @@ export default class GameScene extends Phaser.Scene {
       gravityY: -50,
     }).setDepth(11);
 
-    // Nitro flames (separate, more intense)
+    // Nitro flames (separate, more intense) - MORE VISIBLE
     this.nitroFlames = this.add.particles(0, 0, 'nitro_flame', {
       lifespan: { min: 100, max: 200 },
       speedY: { min: 200, max: 350 },
-      scale: { start: 0.5, end: 0 },
+      scale: { start: 0.7, end: 0 },
       frequency: 15,
       emitting: false,
       blendMode: 'ADD',
@@ -632,27 +640,40 @@ export default class GameScene extends Phaser.Scene {
     // Boss chase mode - if player passes boss, boss chases for a bit
     if (playerPassedBoss && !this.bossChaseMode) {
       this.bossChaseMode = true;
-      this.bossChaseTimer = 5; // Chase for 5 seconds
+      this.bossChaseTimer = 8; // Chase for 8 seconds
       this.flashBanner('BOSS PURSUING!');
       this.game.audioManager?.play('siren');
     }
     
     if (this.bossChaseMode) {
       this.bossChaseTimer -= dt;
-      // Chase player vertically and horizontally
-      boss.y = Phaser.Math.Linear(boss.y, this.player.y - 80, 0.02);
-      boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.03);
+      // Chase player vertically and horizontally - AGGRESSIVE
+      boss.y = Phaser.Math.Linear(boss.y, this.player.y - 60, 0.05); // Stay close behind player
+      boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.08); // Faster horizontal tracking
       
-      // More aggressive ramming during chase
-      if (boss.attackTimer > 1 && boss.attackCooldown <= 0) {
+      // More aggressive ramming during chase - VERTICAL RAM ATTACK
+      if (boss.attackTimer > 0.8 && boss.attackCooldown <= 0) {
         boss.attackTimer = 0;
-        boss.attackCooldown = 1.5;
+        boss.attackCooldown = 1.2;
+        // Ram vertically downward at player
+        const self = this;
         this.tweens.add({
           targets: boss,
-          x: this.player.x,
-          duration: 500,
+          y: this.player.y + 100, // Ram past player
+          duration: 400,
           ease: 'Power2',
+          onComplete: () => { 
+            if (!self.boss || !self.boss.active) return;
+            self.boss.attacking = false;
+            self.bossAttackCount++;
+            if (self.bossAttackText) {
+              self.bossAttackText.setText(`ATTACKS: ${self.bossAttackCount} / ${self.bossMaxAttacks}`);
+            }
+          }
         });
+        // Visual indicator of ram
+        this.burst(boss.x, boss.y, 'spark_shower', 8);
+        this.cameras.main.shake(80, 0.006);
       }
       
       if (this.bossChaseTimer <= 0) {
@@ -663,7 +684,7 @@ export default class GameScene extends Phaser.Scene {
       // Phase 1: Slow approach, ram attempts
       if (boss.phase === 1) {
         boss.y += boss.vy * dt;
-        if (boss.y > 150) boss.vy = 20;
+        if (boss.y > 150) boss.vy = 30; // Faster approach
         
         // Side-to-side sweeping
         boss.x += boss.side * 80 * dt;
@@ -677,16 +698,17 @@ export default class GameScene extends Phaser.Scene {
           boss.attackTimer = 0;
           boss.attackCooldown = 2;
           boss.attacking = true;
-          const targetX = this.player.x;
+          // VERTICAL RAM - boss charges down at player
+          const targetY = this.player.y + 120; // Target below player to ram through
           const self = this;
           this.tweens.add({
             targets: boss,
-            x: targetX,
-            duration: 600,
+            y: targetY,
+            duration: 500,
             ease: 'Power2',
             onComplete: () => { 
               if (!self.boss || !self.boss.active) return;
-              self.boss.side = targetX < self.boss.x ? -1 : 1; 
+              self.boss.side = this.player.x < self.boss.x ? -1 : 1; 
               self.boss.attacking = false;
               self.bossAttackCount++;
               if (self.bossAttackText) {
@@ -694,6 +716,9 @@ export default class GameScene extends Phaser.Scene {
               }
             }
           });
+          // Visual indicator of ram
+          this.burst(boss.x, boss.y, 'spark_shower', 6);
+          this.cameras.main.shake(60, 0.005);
         }
         
         if (this.bossHealth < this.bossMaxHealth * 0.6) {
@@ -705,10 +730,10 @@ export default class GameScene extends Phaser.Scene {
       // Phase 2: Faster, spawns minions
       else if (boss.phase === 2) {
         boss.y += boss.vy * dt;
-        boss.x += boss.side * 140 * dt;
+        boss.x += boss.side * 160 * dt; // Faster sweeping
         if (boss.x > ROAD_RIGHT - 40 || boss.x < ROAD_LEFT + 40) boss.side *= -1;
         
-        if (boss.attackTimer > 1.5) {
+        if (boss.attackTimer > 1.2) {
           boss.attackTimer = 0;
           // Spawn explosive barrels from sides
           const side = Phaser.Math.Between(0, 1) ? ROAD_LEFT + 30 : ROAD_RIGHT - 30;
@@ -720,6 +745,23 @@ export default class GameScene extends Phaser.Scene {
           barrel.wrecked = false;
           barrel.fromBoss = true;
           this.entities.push(barrel);
+          // Also do a vertical ram
+          if (boss.attackCooldown <= 0) {
+            boss.attackCooldown = 1.5;
+            const self = this;
+            this.tweens.add({
+              targets: boss,
+              y: this.player.y + 100,
+              duration: 400,
+              ease: 'Power2',
+              onComplete: () => {
+                if (!self.boss || !self.boss.active) return;
+                self.boss.attacking = false;
+                self.bossAttackCount++;
+              }
+            });
+            this.burst(boss.x, boss.y, 'spark_shower', 8);
+          }
         }
         
         if (this.bossHealth < this.bossMaxHealth * 0.2) {
@@ -729,10 +771,28 @@ export default class GameScene extends Phaser.Scene {
       }
       // Phase 3: Desperate, charges
       else {
-        boss.vy = 120;
+        boss.vy = 150; // Faster vertical
         boss.y += boss.vy * dt;
-        // Charge directly at player
-        boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.05);
+        // Charge directly at player - both X and Y
+        boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.08);
+        // Constant ramming in phase 3
+        if (boss.attackCooldown <= 0) {
+          boss.attackCooldown = 1.0;
+          const self = this;
+          this.tweens.add({
+            targets: boss,
+            y: this.player.y + 120,
+            duration: 350,
+            ease: 'Power3',
+            onComplete: () => {
+              if (!self.boss || !self.boss.active) return;
+              self.boss.attacking = false;
+              self.bossAttackCount++;
+            }
+          });
+          this.burst(boss.x, boss.y, 'spark_shower', 10);
+          this.cameras.main.shake(100, 0.008);
+        }
       }
     }
     
@@ -765,8 +825,8 @@ export default class GameScene extends Phaser.Scene {
             this.boss.x += Phaser.Math.Between(-40, 40);
           }
         } else if (this.shieldTime <= 0) {
-          // Boss damages player
-          this.damage(25);
+          // Boss damages player - MORE DAMAGE from boss ram
+          this.damage(35);
           if (this.boss && this.boss.active) {
             this.boss.x += Phaser.Math.Between(-40, 40);
           }
@@ -1000,6 +1060,7 @@ export default class GameScene extends Phaser.Scene {
     safe('updateEntities', () => this.updateEntities(dt));
     safe('updateHud', () => this.updateHud());
     safe('updateWeather', () => this.updateWeather(dt));
+    safe('checkRewards', () => this.checkRewards());
   }
 
   handleInput(dt) {
@@ -1093,6 +1154,12 @@ export default class GameScene extends Phaser.Scene {
       const trailerY = this.trailer.y + 30;
       this.tireSmokeL.setPosition(trailerX - 20, trailerY);
       this.tireSmokeR.setPosition(trailerX + 20, trailerY);
+      
+      // ENHANCED: More tire smoke particles for visibility
+      if (Math.random() < 0.3) {
+        this.burst(trailerX - 20, trailerY, 'tire_smoke', 1);
+        this.burst(trailerX + 20, trailerY, 'tire_smoke', 1);
+      }
     } else {
       this.tireSmokeL.emitting = false;
       this.tireSmokeR.emitting = false;
@@ -1106,10 +1173,22 @@ export default class GameScene extends Phaser.Scene {
       const trailerY = this.trailer.y + 30;
       this.roadSprayL.setPosition(trailerX - 20, trailerY);
       this.roadSprayR.setPosition(trailerX + 20, trailerY);
+      
+      // ENHANCED: More road spray
+      if (Math.random() < 0.2) {
+        this.burst(trailerX - 20, trailerY, 'puddle_ripple', 1);
+        this.burst(trailerX + 20, trailerY, 'puddle_ripple', 1);
+      }
     } else {
       this.roadSprayL.emitting = false;
       this.roadSprayR.emitting = false;
     }
+
+    // Distance-based speed progression
+    this.updateSpeedFromDistance();
+    
+    // Update engine audio with current state
+    this.updateEngineAudio();
 
     this.distance += this.speed * dt * 0.08;
     this.dailyProgress.distance = Math.floor(this.distance);
@@ -1241,6 +1320,109 @@ export default class GameScene extends Phaser.Scene {
     // rather than simply tracking road speed.
     let rpmNorm = Math.min(1, speedNorm * 0.78 + (up ? 0.22 : 0) + (this.nitroActive > 0 ? 0.25 : 0));
     am.updateEngine(rpmNorm, load);
+  }
+
+  /**
+   * Distance-based speed progression.
+   * As player travels further, base speed increases automatically.
+   * This creates natural difficulty scaling with distance.
+   */
+  updateSpeedFromDistance() {
+    // Every 5000m, increase min/max speed
+    const bonusInterval = 5000;
+    const newBonus = Math.floor(this.distance / bonusInterval) * 15; // +15 speed per 5km
+    
+    if (newBonus !== this.distanceSpeedBonus) {
+      const diff = newBonus - this.distanceSpeedBonus;
+      this.distanceSpeedBonus = newBonus;
+      this.maxSpeed += diff;
+      this.minSpeed += Math.floor(diff * 0.5);
+      
+      if (diff > 0) {
+        this.flashBanner('SPEED BOOST! Max: ' + Math.round(this.maxSpeed * 0.28) + ' MPH');
+        this.game.audioManager?.play('level_complete');
+      }
+    }
+  }
+
+  /**
+   * Reward system based on score and level.
+   * Grants health, nitro, shields, and bonus points at milestones.
+   */
+  checkRewards() {
+    const oldScore = this.totalScoreEarned;
+    this.totalScoreEarned = this.score;
+    
+    // Score-based rewards
+    const scoreMilestones = [5000, 15000, 30000, 50000, 75000, 100000, 150000, 200000];
+    for (const milestone of scoreMilestones) {
+      if (oldScore < milestone && this.score >= milestone) {
+        this.grantReward('score', milestone);
+      }
+    }
+    
+    // Level-based rewards (every 5 levels)
+    if (this.level % 5 === 0 && !this.levelUpRewards.includes(this.level)) {
+      this.levelUpRewards.push(this.level);
+      this.grantReward('level', this.level);
+    }
+    
+    // Distance-based rewards (every 10km)
+    const distanceMilestones = [10000, 25000, 50000, 100000, 200000];
+    for (const milestone of distanceMilestones) {
+      // Check if we just crossed this milestone
+      const oldDist = this.distance - this.speed * 0.08; // approximate previous frame
+      if (oldDist < milestone && this.distance >= milestone) {
+        this.grantReward('distance', milestone);
+      }
+    }
+  }
+
+  grantReward(type, value) {
+    let rewardText = '';
+    let rewardColor = '#ffcc00';
+    
+    switch (type) {
+      case 'score':
+        if (value >= 100000) {
+          this.health = Math.min(100, this.health + 30);
+          this.nitroCharge = Math.min(1, this.nitroCharge + 0.5);
+          this.shieldTime += 8;
+          rewardText = 'MEGA REWARD! +30 HP, NITRO, SHIELD';
+          rewardColor = '#ff00ff';
+        } else if (value >= 50000) {
+          this.health = Math.min(100, this.health + 20);
+          this.nitroCharge = Math.min(1, this.nitroCharge + 0.3);
+          this.shieldTime += 5;
+          rewardText = 'BIG REWARD! +20 HP, NITRO, SHIELD';
+          rewardColor = '#ff6600';
+        } else {
+          this.health = Math.min(100, this.health + 10);
+          this.nitroCharge = Math.min(1, this.nitroCharge + 0.2);
+          rewardText = 'REWARD! +10 HP, NITRO';
+        }
+        break;
+      case 'level':
+        this.health = Math.min(100, this.health + 15);
+        this.shieldTime += 3;
+        this.nitroCharge = Math.min(1, this.nitroCharge + 0.25);
+        rewardText = `LEVEL ${value} REWARD! +15 HP, SHIELD, NITRO`;
+        rewardColor = '#00ffff';
+        break;
+      case 'distance':
+        this.health = Math.min(100, this.health + 10);
+        this.score += value / 10; // Bonus points
+        rewardText = `${Math.floor(value/1000)}km BONUS! +10 HP, +${Math.floor(value/10)} PTS`;
+        rewardColor = '#66ff66';
+        break;
+    }
+    
+    if (rewardText) {
+      this.flashBanner(rewardText);
+      this.floatText(this.player.x, this.player.y - 50, rewardText, rewardColor);
+      this.cameras.main.flash(200, 0, 255, 100, false);
+      this.game.audioManager?.play('powerup');
+    }
   }
 
   scrollWorld(dt) {
@@ -1716,13 +1898,32 @@ export default class GameScene extends Phaser.Scene {
   }
 
   burst(x, y, key, count) {
+    // Adjust parameters based on particle type for better visibility
+    const params = {
+      explosion_particle: { lifespan: 600, speed: { min: 60, max: 250 }, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' },
+      spark_particle: { lifespan: 400, speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' },
+      debris_particle: { lifespan: 800, speed: { min: 50, max: 220 }, scale: { start: 1.2, end: 0 }, alpha: { start: 0.9, end: 0 }, gravityY: 100, blendMode: 'NORMAL' },
+      glass_shard: { lifespan: 600, speed: { min: 80, max: 300 }, scale: { start: 0.8, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 150, rotate: { min: 0, max: 360 }, blendMode: 'ADD' },
+      spark_shower: { lifespan: 500, speed: { min: 100, max: 400 }, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 50, blendMode: 'ADD' },
+      tire_smoke: { lifespan: 500, speed: { min: 20, max: 60 }, speedY: { min: 10, max: 40 }, scale: { start: 1, end: 1.5 }, alpha: { start: 0.5, end: 0 }, gravityY: 30, blendMode: 'NORMAL' },
+      puddle_ripple: { lifespan: 300, speed: { min: 10, max: 30 }, speedY: { min: 50, max: 100 }, scale: { start: 0.8, end: 0 }, alpha: { start: 0.8, end: 0 }, gravityY: 100, blendMode: 'NORMAL', tint: 0xAADDFF },
+    };
+    
+    const p = params[key] || { lifespan: 400, speed: { min: 40, max: 180 }, scale: { start: 1, end: 0 }, blendMode: 'ADD' };
+    
     this.add.particles(x, y, key, {
-      lifespan: 400,
-      speed: { min: 40, max: 180 },
-      scale: { start: 1, end: 0 },
+      lifespan: p.lifespan,
+      speed: p.speed,
+      speedY: p.speedY,
+      speedX: p.speedX,
+      scale: p.scale,
+      alpha: p.alpha,
+      gravityY: p.gravityY,
+      rotate: p.rotate,
       quantity: count,
       emitting: false,
-      blendMode: 'ADD',
+      blendMode: p.blendMode,
+      tint: p.tint,
     }).explode(count);
   }
 
