@@ -307,6 +307,7 @@ export default class AudioManager {
 
     this.engine = {
       amp,
+      noiseGain,  // Store noiseGain so we can suspend it too
       // Aliases for test compatibility
       fireA: osc1,
       fireB: osc2,
@@ -315,7 +316,6 @@ export default class AudioManager {
       osc2,
       osc3,
       tone,
-      noiseGain,
       noiseTone,
       turbo,
       turboGain,
@@ -338,6 +338,7 @@ export default class AudioManager {
     if (this.ctx.state === 'suspended') this.ctx.resume();
     this.engine.suspended = false;
     this.engine.amp.gain.setTargetAtTime(this._engineTargetAmp(), this.ctx.currentTime, 0.12);
+    this.engine.noiseGain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.12);
   }
 
   setEngineSuspended(suspended) {
@@ -346,8 +347,10 @@ export default class AudioManager {
     const t = this.ctx.currentTime;
     if (suspended) {
       this.engine.amp.gain.setTargetAtTime(0, t, 0.1);
+      this.engine.noiseGain.gain.setTargetAtTime(0, t, 0.1);
     } else {
       this.engine.amp.gain.setTargetAtTime(this._engineTargetAmp(), t, 0.12);
+      this.engine.noiseGain.gain.setTargetAtTime(0.05, t, 0.12);
     }
   }
 
