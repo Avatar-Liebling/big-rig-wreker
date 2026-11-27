@@ -195,8 +195,8 @@ export default class GameScene extends Phaser.Scene {
       alpha: { start: 0.6, end: 0 },
       frequency: 30,
       rotate: { min: 0, max: 360 },
-      gravityY: 10,
-    }).setDepth(8);
+      gravityY: -20,
+    }).setDepth(20).setScrollFactor(0);
     
     // Heat shimmer above exhaust (rising heat distortion) - MORE VISIBLE
     this.heatShimmer = this.add.particles(0, 0, 'heat_shimmer', {
@@ -207,7 +207,7 @@ export default class GameScene extends Phaser.Scene {
       frequency: 50,
       rotate: { min: -5, max: 5 },
       gravityY: -20,
-    }).setDepth(9);
+    }).setDepth(20).setScrollFactor(0);
     
     // Second exhaust layer - darker smoke
     this.exhaust2 = this.add.particles(0, 0, 'smoke_particle', {
@@ -218,8 +218,8 @@ export default class GameScene extends Phaser.Scene {
       alpha: { start: 0.4, end: 0 },
       frequency: 20,
       tint: 0x111111,
-      gravityY: 5,
-    }).setDepth(7);
+      gravityY: -10,
+    }).setDepth(19).setScrollFactor(0);
 
     // Tire smoke emitters (one per rear wheel) - for burnouts/drifts - MORE VISIBLE
     this.tireSmokeL = this.add.particles(0, 0, 'tire_smoke', {
@@ -230,9 +230,9 @@ export default class GameScene extends Phaser.Scene {
       alpha: { start: 0.5, end: 0 },
       frequency: 20,
       emitting: false,
-      gravityY: 30,
+      gravityY: -30,
       rotate: { min: 0, max: 360 },
-    }).setDepth(9);
+    }).setDepth(20).setScrollFactor(0);
     
     this.tireSmokeR = this.add.particles(0, 0, 'tire_smoke', {
       lifespan: { min: 500, max: 1000 },
@@ -242,9 +242,9 @@ export default class GameScene extends Phaser.Scene {
       alpha: { start: 0.5, end: 0 },
       frequency: 20,
       emitting: false,
-      gravityY: 30,
+      gravityY: -30,
       rotate: { min: 0, max: 360 },
-    }).setDepth(9);
+    }).setDepth(20).setScrollFactor(0);
 
     // Road spray (wet road kick-up behind tires) - MORE VISIBLE
     this.roadSprayL = this.add.particles(0, 0, 'puddle_ripple', {
@@ -255,9 +255,9 @@ export default class GameScene extends Phaser.Scene {
       alpha: { start: 0.7, end: 0 },
       frequency: 20,
       emitting: false,
-      gravityY: 100,
+      gravityY: 40,
       tint: 0xAADDFF,
-    }).setDepth(9);
+    }).setDepth(20).setScrollFactor(0);
     
     this.roadSprayR = this.add.particles(0, 0, 'puddle_ripple', {
       lifespan: { min: 200, max: 400 },
@@ -267,9 +267,9 @@ export default class GameScene extends Phaser.Scene {
       alpha: { start: 0.7, end: 0 },
       frequency: 20,
       emitting: false,
-      gravityY: 100,
+      gravityY: 40,
       tint: 0xAADDFF,
-    }).setDepth(9);
+    }).setDepth(20).setScrollFactor(0);
 
     this.flames = this.add.particles(0, 0, 'spark_particle', {
       lifespan: { min: 150, max: 300 },
@@ -281,7 +281,7 @@ export default class GameScene extends Phaser.Scene {
       emitting: false,
       blendMode: 'ADD',
       gravityY: -50,
-    }).setDepth(11);
+    }).setDepth(22).setScrollFactor(0);
 
     // Nitro flames (separate, more intense) - MORE VISIBLE
     this.nitroFlames = this.add.particles(0, 0, 'nitro_flame', {
@@ -292,7 +292,7 @@ export default class GameScene extends Phaser.Scene {
       emitting: false,
       blendMode: 'ADD',
       gravityY: -100,
-    }).setDepth(12);
+    }).setDepth(23).setScrollFactor(0);
 
     this.headlights = this.add.ellipse(this.player.x, this.player.y - 40, 70, 90, 0xffffcc, 0.08).setDepth(7);
     
@@ -1987,88 +1987,96 @@ export default class GameScene extends Phaser.Scene {
     if (this.health <= 0) this.gameOver();
   }
 
-  // Radial / ring / cone entry points used by collisions and explosions.
-  // They share the proven burst emitter so a missing method cannot throw
-  // mid-collision and abort the game-over transition.
-  emitRadial(x, y, key, count, _overrides) {
-    this.burst(x, y, key, count);
+  // Burst emitters render on the FX band (depth 25): above the street
+  // overlay (depth 1-2) and the vehicles (depth 5-12), below the HUD (50).
+  // Phaser ignores a `depth` key inside the emitter config, so depth is set
+  // on the emitter object itself.
+  emitRadial(x, y, key, count, overrides = {}) {
+    const presets = {
+      explosion_particle: { lifespan: 700, speed: { min: 90, max: 280 }, scale: { start: 1.6, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' },
+      explosion_particle_large: { lifespan: 900, speed: { min: 70, max: 240 }, scale: { start: 2.4, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' },
+      spark_particle: { lifespan: 450, speed: { min: 80, max: 260 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD', gravityY: 40 },
+      spark_particle_large: { lifespan: 550, speed: { min: 90, max: 300 }, scale: { start: 1.6, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD', gravityY: 30 },
+      spark_shower: { lifespan: 400, speed: { min: 140, max: 420 }, scale: { start: 0.7, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD', gravityY: 60 },
+      spark_shower_white: { lifespan: 400, speed: { min: 160, max: 480 }, scale: { start: 0.8, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD', gravityY: 50 },
+      debris_particle: { lifespan: 900, speed: { min: 70, max: 240 }, scale: { start: 1.2, end: 0.2 }, alpha: { start: 1, end: 0 }, blendMode: 'NORMAL', gravityY: 180, rotate: { min: -360, max: 360 } },
+      metal_shard: { lifespan: 1000, speed: { min: 120, max: 380 }, scale: { start: 1, end: 0.2 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD', gravityY: 160, rotate: { min: -720, max: 720 } },
+      glass_shard: { lifespan: 700, speed: { min: 100, max: 340 }, scale: { start: 0.8, end: 0 }, alpha: { start: 0.9, end: 0 }, blendMode: 'ADD', gravityY: 200, rotate: { min: -720, max: 720 } },
+      fire_ember: { lifespan: 900, speed: { min: 30, max: 140 }, scale: { start: 1.3, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD', gravityY: -90 },
+      smoke_plume: { lifespan: 1400, speed: { min: 15, max: 55 }, scale: { start: 1.4, end: 3.2 }, alpha: { start: 0.55, end: 0 }, blendMode: 'NORMAL', gravityY: -70 },
+      black_smoke: { lifespan: 1600, speed: { min: 10, max: 40 }, scale: { start: 1.8, end: 4 }, alpha: { start: 0.6, end: 0 }, blendMode: 'NORMAL', gravityY: -50, tint: 0x222222 },
+      dust_particle: { lifespan: 500, speed: { min: 40, max: 160 }, scale: { start: 1, end: 0 }, alpha: { start: 0.8, end: 0 }, blendMode: 'NORMAL' },
+      smoke_particle: { lifespan: 800, speed: { min: 20, max: 70 }, scale: { start: 1.2, end: 2.4 }, alpha: { start: 0.45, end: 0 }, blendMode: 'NORMAL', gravityY: -40 },
+      tire_smoke: { lifespan: 600, speed: { min: 20, max: 70 }, scale: { start: 0.8, end: 1.6 }, alpha: { start: 0.5, end: 0 }, blendMode: 'NORMAL', gravityY: -25 },
+      puddle_ripple: { lifespan: 450, speed: { min: 8, max: 24 }, scale: { start: 0.4, end: 1.4 }, alpha: { start: 0.7, end: 0 }, blendMode: 'NORMAL', tint: 0xaaddff },
+      shockwave_ring: { lifespan: 500, speed: { min: 0, max: 0 }, scale: { start: 0.4, end: 3.2 }, alpha: { start: 0.85, end: 0 }, blendMode: 'ADD' },
+    };
+    const base = presets[key] || { lifespan: 500, speed: { min: 60, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' };
+    // Shallow copy the preset first so overrides never mutate the shared table.
+    const p = Object.assign({}, base, overrides);
+    const n = Math.max(1, count || 1);
+
+    // A speedY override would pin particles to a vertical axis and break the
+    // 360 spread. Convert it into an upward gravity bias instead so the
+    // emission stays omnidirectional while smoke and embers still rise.
+    let gravityY = p.gravityY || 0;
+    if (p.speedY) {
+      // Convert the vertical velocity bias into gravity so the particle keeps
+      // moving along that axis while still spreading over the full circle.
+      const bias = (p.speedY.min + p.speedY.max) / 2;
+      gravityY = bias * 4;
+      delete p.speedY;
+    }
+    delete p.speedX;
+
+    // Full circle by default; emitCone narrows it via an angle override.
+    const angle = p.angle || { min: 0, max: 360 };
+    const emitter = this.add.particles(x, y, key, {
+      lifespan: p.lifespan,
+      speed: p.speed,
+      angle: angle,
+      scale: p.scale,
+      alpha: p.alpha || { start: 1, end: 0 },
+      gravityY: gravityY,
+      rotate: p.rotate,
+      blendMode: p.blendMode || 'ADD',
+      tint: p.tint,
+      emitting: false,
+    });
+    // Depth must be set on the emitter, not in the config block.
+    emitter.setDepth(25).setScrollFactor(0);
+    emitter.explode(n);
+    // Free the emitter once its particles have died off.
+    this.time.delayedCall((p.lifespan || 600) + 250, () => {
+      if (emitter && emitter.scene) emitter.destroy();
+    });
+    return emitter;
   }
 
-  emitRing(x, y, key, count, _overrides) {
-    this.burst(x, y, key, Math.max(1, count || 1));
+  emitRing(x, y, key, count) {
+    return this.emitRadial(x, y, key, Math.max(1, count || 1), {
+      speed: { min: 0, max: 0 },
+      scale: { start: 0.3, end: 3.4 },
+      alpha: { start: 0.9, end: 0 },
+      lifespan: 520,
+      gravityY: 0,
+      blendMode: 'ADD',
+    });
   }
 
   emitCone(x, y, key, count, centerAngleDeg, spreadDeg) {
-    this.burstCone(x, y, key, count, centerAngleDeg, spreadDeg);
+    const half = (spreadDeg || 40) / 2;
+    return this.emitRadial(x, y, key, count, {
+      angle: { min: (centerAngleDeg || 0) - half, max: (centerAngleDeg || 0) + half },
+    });
   }
 
   burst(x, y, key, count) {
-    // Adjust parameters based on particle type for better visibility
-    const params = {
-      explosion_particle: { lifespan: 600, speed: { min: 60, max: 250 }, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' },
-      explosion_particle_large: { lifespan: 900, speed: { min: 80, max: 350 }, scale: { start: 2.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' },
-      spark_particle: { lifespan: 400, speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' },
-      spark_particle_large: { lifespan: 600, speed: { min: 60, max: 300 }, scale: { start: 1.8, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' },
-      spark_shower_white: { lifespan: 500, speed: { min: 120, max: 500 }, scale: { start: 0.8, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' },
-      debris_particle: { lifespan: 800, speed: { min: 50, max: 220 }, scale: { start: 1.2, end: 0 }, alpha: { start: 0.9, end: 0 }, gravityY: 100, blendMode: 'NORMAL' },
-      metal_shard: { lifespan: 1000, speed: { min: 100, max: 400 }, scale: { start: 1.0, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 80, rotate: { min: 0, max: 360 }, blendMode: 'ADD' },
-      glass_shard: { lifespan: 600, speed: { min: 80, max: 300 }, scale: { start: 0.8, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 150, rotate: { min: 0, max: 360 }, blendMode: 'ADD' },
-      spark_shower: { lifespan: 500, speed: { min: 100, max: 400 }, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 50, blendMode: 'ADD' },
-      fire_ember: { lifespan: 800, speed: { min: 20, max: 150 }, speedY: { min: -100, max: -20 }, scale: { start: 1.2, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: -30, blendMode: 'ADD' },
-      shockwave_ring: { lifespan: 400, speed: { min: 0, max: 0 }, scale: { start: 0.5, end: 3.0 }, alpha: { start: 0.8, end: 0 }, blendMode: 'ADD', quantity: 1 },
-      smoke_plume: { lifespan: 1200, speed: { min: 10, max: 40 }, speedY: { min: -80, max: -30 }, scale: { start: 1.5, end: 3.0 }, alpha: { start: 0.4, end: 0 }, gravityY: -20, blendMode: 'NORMAL' },
-      black_smoke: { lifespan: 1500, speed: { min: 5, max: 20 }, speedY: { min: -60, max: -20 }, scale: { start: 2.0, end: 4.0 }, alpha: { start: 0.5, end: 0 }, gravityY: -10, tint: 0x111111, blendMode: 'NORMAL' },
-      tire_smoke: { lifespan: 500, speed: { min: 20, max: 60 }, speedY: { min: 10, max: 40 }, scale: { start: 1, end: 1.5 }, alpha: { start: 0.5, end: 0 }, gravityY: 30, blendMode: 'NORMAL' },
-      puddle_ripple: { lifespan: 300, speed: { min: 10, max: 30 }, speedY: { min: 50, max: 100 }, scale: { start: 0.8, end: 0 }, alpha: { start: 0.8, end: 0 }, gravityY: 100, blendMode: 'NORMAL', tint: 0xAADDFF },
-    };
-    
-    const p = params[key] || { lifespan: 400, speed: { min: 40, max: 180 }, scale: { start: 1, end: 0 }, blendMode: 'ADD' };
-    
-    // CRITICAL: Set high depth so particles render ON TOP of road/street
-    this.add.particles(x, y, key, {
-      lifespan: p.lifespan,
-      speed: p.speed,
-      speedY: p.speedY,
-      speedX: p.speedX,
-      scale: p.scale,
-      alpha: p.alpha,
-      gravityY: p.gravityY,
-      rotate: p.rotate,
-      quantity: count,
-      emitting: false,
-      blendMode: p.blendMode,
-      tint: p.tint,
-      depth: 200,  // Above everything (road is ~0-50, vehicles ~100)
-    }).explode(count);
+    this.emitRadial(x, y, key, count);
   }
 
-  // Directional cone burst for directional debris
   burstCone(x, y, key, count, centerAngleDeg, spreadDeg) {
-    const params = {
-      debris_particle: { lifespan: 800, speed: { min: 100, max: 300 }, scale: { start: 1.2, end: 0 }, alpha: { start: 0.9, end: 0 }, gravityY: 100, blendMode: 'NORMAL' },
-      metal_shard: { lifespan: 1000, speed: { min: 150, max: 500 }, scale: { start: 1.0, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 80, rotate: { min: 0, max: 360 }, blendMode: 'ADD' },
-      fire_ember: { lifespan: 800, speed: { min: 50, max: 200 }, scale: { start: 1.0, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: -30, blendMode: 'ADD' },
-    };
-    const p = params[key] || { lifespan: 400, speed: { min: 40, max: 180 }, scale: { start: 1, end: 0 }, blendMode: 'ADD' };
-    
-    for (let i = 0; i < count; i++) {
-      const angle = centerAngleDeg + Phaser.Math.Between(-spreadDeg / 2, spreadDeg / 2);
-      const angleRad = angle * Math.PI / 180;
-      this.add.particles(x, y, key, {
-        lifespan: p.lifespan,
-        speedX: { min: Math.cos(angleRad) * p.speed.min, max: Math.cos(angleRad) * p.speed.max },
-        speedY: { min: Math.sin(angleRad) * p.speed.min, max: Math.sin(angleRad) * p.speed.max },
-        scale: p.scale,
-        alpha: p.alpha,
-        gravityY: p.gravityY,
-        rotate: p.rotate,
-        quantity: 1,
-        emitting: false,
-        blendMode: p.blendMode,
-        tint: p.tint,
-        depth: 200,
-      }).explode(1);
-    }
+    this.emitCone(x, y, key, count, centerAngleDeg, spreadDeg);
   }
 
   floatText(x, y, msg, color) {
