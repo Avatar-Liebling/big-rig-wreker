@@ -675,7 +675,7 @@ export default class GameScene extends Phaser.Scene {
           }
         });
         // Visual indicator of ram
-        this.burst(boss.x, boss.y, 'spark_shower', 6);
+        this.emitRadial(boss.x, boss.y, 'spark_shower', 6, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' });
         this.cameras.main.shake(60, 0.005);
       }
       
@@ -720,7 +720,7 @@ export default class GameScene extends Phaser.Scene {
             }
           });
           // Visual indicator of ram
-          this.burst(boss.x, boss.y, 'spark_shower', 5); // Was 6
+          this.emitRadial(boss.x, boss.y, 'spark_shower', 5, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' });
           this.cameras.main.shake(50, 0.004); // Was 60, 0.005
         }
         
@@ -763,7 +763,7 @@ export default class GameScene extends Phaser.Scene {
                 self.bossAttackCount++;
               }
             });
-            this.burst(boss.x, boss.y, 'spark_shower', 6); // Was 8
+            this.emitRadial(boss.x, boss.y, 'spark_shower', 6, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' }); // Was 8
           }
         }
         
@@ -793,7 +793,7 @@ export default class GameScene extends Phaser.Scene {
               self.bossAttackCount++;
             }
           });
-          this.burst(boss.x, boss.y, 'spark_shower', 8); // Was 10
+          this.emitRadial(boss.x, boss.y, 'spark_shower', 8, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' }); // Was 10
           this.cameras.main.shake(80, 0.006); // Was 100, 0.008
         }
       }
@@ -820,7 +820,7 @@ export default class GameScene extends Phaser.Scene {
           const bx = this.boss.x, by = this.boss.y;
           this.damageBoss(25);
           this.floatText(bx, by - 30, '-25', '#ff4444');
-          this.burst(bx, by, 'spark_particle', 12);
+          this.emitRadial(bx, by, 'spark_particle', 12, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
           this.cameras.main.shake(100, 0.008);
           // Knockback (boss may have been defeated by this hit)
           if (this.boss && this.boss.active) {
@@ -880,7 +880,7 @@ export default class GameScene extends Phaser.Scene {
   damageBoss(amount) {
     if (!this.boss || !this.boss.active) return;
     this.bossHealth -= amount;
-    this.burst(this.boss.x, this.boss.y, 'spark_particle', 8);
+    this.emitRadial(this.boss.x, this.boss.y, 'spark_particle', 8, { speed: { min: 40, max: 200 }, lifespan: 400, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
     this.cameras.main.shake(80, 0.006);
     
     if (this.bossHealth <= 0) {
@@ -896,8 +896,8 @@ export default class GameScene extends Phaser.Scene {
     this.game.audioManager?.play('level_complete');
     
     // Massive explosion
-    this.burst(this.boss.x, this.boss.y, 'explosion_particle', 30);
-    this.burst(this.boss.x, this.boss.y, 'spark_particle', 20);
+    this.emitRadial(this.boss.x, this.boss.y, 'explosion_particle', 30, { speed: { min: 60, max: 250 }, lifespan: 600, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+    this.emitRadial(this.boss.x, this.boss.y, 'spark_particle', 20, { speed: { min: 40, max: 200 }, lifespan: 400, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
     
     // Remove from entities array
     const idx = this.entities.indexOf(this.boss);
@@ -1160,8 +1160,8 @@ export default class GameScene extends Phaser.Scene {
       
       // ENHANCED: More tire smoke particles for visibility
       if (Math.random() < 0.3) {
-        this.burst(trailerX - 20, trailerY, 'tire_smoke', 1);
-        this.burst(trailerX + 20, trailerY, 'tire_smoke', 1);
+        this.emitRadial(trailerX - 20, trailerY, 'tire_smoke', 1, { speed: { min: 20, max: 60 }, speedY: { min: 10, max: 40 }, scale: { start: 1, end: 1.5 }, alpha: { start: 0.5, end: 0 }, gravityY: 30, blendMode: 'NORMAL' });
+        this.emitRadial(trailerX + 20, trailerY, 'tire_smoke', 1, { speed: { min: 20, max: 60 }, speedY: { min: 10, max: 40 }, scale: { start: 1, end: 1.5 }, alpha: { start: 0.5, end: 0 }, gravityY: 30, blendMode: 'NORMAL' });
       }
     } else {
       this.tireSmokeL.emitting = false;
@@ -1179,8 +1179,8 @@ export default class GameScene extends Phaser.Scene {
       
       // ENHANCED: More road spray
       if (Math.random() < 0.2) {
-        this.burst(trailerX - 20, trailerY, 'puddle_ripple', 1);
-        this.burst(trailerX + 20, trailerY, 'puddle_ripple', 1);
+        this.emitRadial(trailerX - 20, trailerY, 'puddle_ripple', 1, { speed: { min: 10, max: 30 }, speedY: { min: 50, max: 100 }, scale: { start: 0.8, end: 0 }, alpha: { start: 0.8, end: 0 }, gravityY: 100, blendMode: 'NORMAL', tint: 0xAADDFF });
+        this.emitRadial(trailerX + 20, trailerY, 'puddle_ripple', 1, { speed: { min: 10, max: 30 }, speedY: { min: 50, max: 100 }, scale: { start: 0.8, end: 0 }, alpha: { start: 0.8, end: 0 }, gravityY: 100, blendMode: 'NORMAL', tint: 0xAADDFF });
       }
     } else {
       this.roadSprayL.emitting = false;
@@ -1656,7 +1656,7 @@ export default class GameScene extends Phaser.Scene {
       this.score += 15;
       this.floatText(e.x, e.y, '+15', '#ffdd88');
       this.game.audioManager?.play('crash');
-      this.burst(e.x, e.y, 'dust_particle', 8);
+      this.emitRadial(e.x, e.y, 'dust_particle', 8, { speed: { min: 30, max: 150 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'NORMAL' });
       e.destroy();
       return;
     }
@@ -1666,14 +1666,14 @@ export default class GameScene extends Phaser.Scene {
       this.speed = Math.max(this.minSpeed, this.speed * 0.5);
       this.floatText(e.x, e.y, 'SLIP!', '#88aaff');
       this.game.audioManager?.play('screech');
-      this.burst(e.x, e.y, 'smoke_particle', 12);
+      this.emitRadial(e.x, e.y, 'smoke_particle', 12, { speed: { min: 10, max: 40 }, speedY: { min: -30, max: -10 }, scale: { start: 1.5, end: 3.0 }, alpha: { start: 0.4, end: 0 }, gravityY: -10, blendMode: 'NORMAL' });
       e.destroy();
       return;
     }
     if (e.kind === 'debris') {
       // Debris pile - multi-hit
       e.hits--;
-      this.burst(e.x, e.y, 'spark_particle', 6);
+      this.emitRadial(e.x, e.y, 'spark_particle', 6, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
       this.floatText(e.x, e.y, 'HIT', '#ffaa00');
       this.game.audioManager?.play('crash');
       if (e.hits <= 0) {
@@ -1686,8 +1686,8 @@ export default class GameScene extends Phaser.Scene {
       // Tanker explodes!
       e.wrecked = true;
       this.wreck(e); // Big points
-      this.burst(e.x, e.y, 'explosion_particle', 20);
-      this.burst(e.x, e.y, 'spark_particle', 15);
+      this.emitRadial(e.x, e.y, 'explosion_particle', 20, { speed: { min: 60, max: 250 }, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+      this.emitRadial(e.x, e.y, 'spark_particle', 15, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
       this.cameras.main.shake(200, 0.01);
       // Damage nearby entities
       for (const other of this.entities) {
@@ -1705,7 +1705,7 @@ export default class GameScene extends Phaser.Scene {
     if (e.kind === 'car' && !e.wrecked) {
       if (this.shieldTime > 0) {
         // Shield active - wreck car for points with shield effect
-        this.burst(e.x, e.y, 'spark_particle', 12);
+        this.emitRadial(e.x, e.y, 'spark_particle', 12, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
         this.wreck(e);
         return;
       }
@@ -1718,7 +1718,7 @@ export default class GameScene extends Phaser.Scene {
     const fast = this.speed > 300 || this.nitroActive > 0;
     if (e.kind === 'hard' || e.kind === 'container') {
       if (this.shieldTime > 0) {
-        this.burst(e.x, e.y, 'spark_particle', 10);
+        this.emitRadial(e.x, e.y, 'spark_particle', 10, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
         e.destroy();
         return;
       }
@@ -1773,10 +1773,10 @@ export default class GameScene extends Phaser.Scene {
     const knockbackY = e.y + Math.sin(knockbackAngle * Math.PI / 180) * knockbackDist;
     
     // Small debris/sparks at impact point
-    this.burst(e.x, e.y, 'spark_particle', 15);
-    this.burst(e.x, e.y, 'spark_shower', 10);
-    this.burst(e.x, e.y, 'debris_particle', 8);
-    this.burst(e.x, e.y, 'glass_shard', 6);
+    this.emitRadial(e.x, e.y, 'spark_particle', 15, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+    this.emitRadial(e.x, e.y, 'spark_shower', 10, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' });
+    this.emitRadial(e.x, e.y, 'debris_particle', 8, { speed: { min: 80, max: 300 }, scale: { start: 1.2, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 200, blendMode: 'NORMAL' });
+    this.emitRadial(e.x, e.y, 'glass_shard', 6, { speed: { min: 100, max: 350 }, scale: { start: 0.8, end: 0 }, alpha: { start: 0.9, end: 0 }, gravityY: 200, blendMode: 'ADD' });
     
     // Screen flash on impact
     this.cameras.main.flash(80, 255, 200, 50, false);
@@ -1810,48 +1810,48 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.shake(300, 0.02);
     
     // MASSIVE firey explosion particles
-    this.burst(x, y, 'explosion_particle', 40);
-    this.burst(x, y, 'explosion_particle_large', 20);
-    this.burst(x, y, 'explosion_particle', 30); // Second wave
+    this.emitRadial(x, y, 'explosion_particle', 40, { speed: { min: 60, max: 250 }, lifespan: 600, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+    this.emitRadial(x, y, 'explosion_particle_large', 20, { speed: { min: 80, max: 300 }, lifespan: 800, scale: { start: 2, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+    this.emitRadial(x, y, 'explosion_particle', 30, { speed: { min: 60, max: 250 }, lifespan: 600, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' }); // Second wave
     this.time.delayedCall(50, () => {
-      this.burst(x, y, 'explosion_particle_large', 15);
+      this.emitRadial(x, y, 'explosion_particle_large', 15, { speed: { min: 80, max: 300 }, lifespan: 800, scale: { start: 2, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
     });
     
     // Fire/ember particles
-    this.burst(x, y, 'spark_particle', 30);
-    this.burst(x, y, 'spark_particle_large', 20);
-    this.burst(x, y, 'spark_shower', 30);
-    this.burst(x, y, 'spark_shower_white', 20);
+    this.emitRadial(x, y, 'spark_particle', 30, { speed: { min: 40, max: 200 }, lifespan: 400, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+    this.emitRadial(x, y, 'spark_particle_large', 20, { speed: { min: 60, max: 250 }, lifespan: 500, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+    this.emitRadial(x, y, 'spark_shower', 30, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' });
+    this.emitRadial(x, y, 'spark_shower_white', 20, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' });
     
     // Rising fire particles
-    this.burst(x, y, 'fire_ember', 25);
+    this.emitRadial(x, y, 'fire_ember', 25, { speed: { min: 20, max: 100 }, speedY: { min: -100, max: -20 }, scale: { start: 1.2, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: -100, blendMode: 'ADD' });
     this.time.delayedCall(100, () => {
-      this.burst(x, y, 'fire_ember', 20);
+      this.emitRadial(x, y, 'fire_ember', 20, { speed: { min: 20, max: 100 }, speedY: { min: -100, max: -20 }, scale: { start: 1.2, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: -100, blendMode: 'ADD' });
     });
     
     // Heavy debris flying outward
-    this.burst(x, y, 'debris_particle', 30);
-    this.burst(x, y, 'metal_shard', 20);
-    this.burst(x, y, 'glass_shard', 15);
+    this.emitRadial(x, y, 'debris_particle', 30, { speed: { min: 80, max: 300 }, scale: { start: 1.2, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 200, blendMode: 'NORMAL' });
+    this.emitRadial(x, y, 'metal_shard', 20, { speed: { min: 100, max: 350 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 200, blendMode: 'ADD' });
+    this.emitRadial(x, y, 'glass_shard', 15, { speed: { min: 100, max: 350 }, scale: { start: 0.8, end: 0 }, alpha: { start: 0.9, end: 0 }, gravityY: 200, blendMode: 'ADD' });
     
     // Directional debris cones - more dramatic
-    this.burstCone(x, y, 'debris_particle', 18, 0, 80);
-    this.burstCone(x, y, 'metal_shard', 12, 90, 60);
-    this.burstCone(x, y, 'debris_particle', 18, 180, 80);
-    this.burstCone(x, y, 'metal_shard', 12, 270, 60);
+    this.emitCone(x, y, 'debris_particle', 18, 0, 80, { speed: { min: 100, max: 300 }, scale: { start: 1.2, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 200, blendMode: 'NORMAL' });
+    this.emitCone(x, y, 'metal_shard', 12, 90, 60, { speed: { min: 100, max: 350 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 200, blendMode: 'ADD' });
+    this.emitCone(x, y, 'debris_particle', 18, 180, 80, { speed: { min: 100, max: 300 }, scale: { start: 1.2, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 200, blendMode: 'NORMAL' });
+    this.emitCone(x, y, 'metal_shard', 12, 270, 60, { speed: { min: 100, max: 350 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 200, blendMode: 'ADD' });
     
     // Shockwave rings
-    this.burst(x, y, 'shockwave_ring', 1);
+    this.emitRing(x, y, 'shockwave_ring', 1, { scale: { start: 0.5, end: 3 }, alpha: { start: 0.8, end: 0 }, lifespan: 500, blendMode: 'ADD' });
     this.time.delayedCall(80, () => {
-      this.burst(x, y, 'shockwave_ring', 1);
+      this.emitRing(x, y, 'shockwave_ring', 1, { scale: { start: 0.5, end: 3 }, alpha: { start: 0.8, end: 0 }, lifespan: 500, blendMode: 'ADD' });
     });
     
     // Thick smoke plumes rising
-    this.burst(x, y, 'smoke_plume', 12);
-    this.burst(x, y, 'black_smoke', 10);
+    this.emitRadial(x, y, 'smoke_plume', 12, { speed: { min: 10, max: 40 }, speedY: { min: -80, max: -30 }, scale: { start: 2, end: 4 }, alpha: { start: 0.5, end: 0 }, gravityY: -50, blendMode: 'NORMAL', tint: 0x444444 });
+    this.emitRadial(x, y, 'black_smoke', 10, { speed: { min: 10, max: 40 }, speedY: { min: -60, max: -20 }, scale: { start: 2.5, end: 5 }, alpha: { start: 0.6, end: 0 }, gravityY: -30, blendMode: 'NORMAL' });
     this.time.delayedCall(150, () => {
-      this.burst(x, y, 'smoke_plume', 8);
-      this.burst(x, y, 'black_smoke', 6);
+      this.emitRadial(x, y, 'smoke_plume', 8, { speed: { min: 10, max: 40 }, speedY: { min: -80, max: -30 }, scale: { start: 2, end: 4 }, alpha: { start: 0.5, end: 0 }, gravityY: -50, blendMode: 'NORMAL', tint: 0x444444 });
+      this.emitRadial(x, y, 'black_smoke', 6, { speed: { min: 10, max: 40 }, speedY: { min: -60, max: -20 }, scale: { start: 2.5, end: 5 }, alpha: { start: 0.6, end: 0 }, gravityY: -30, blendMode: 'NORMAL' });
     });
     
     // Screen flashes - intense fire colors
@@ -1871,9 +1871,9 @@ export default class GameScene extends Phaser.Scene {
       const sy = y + Math.sin(angle) * dist;
       this.time.delayedCall(100 + i * 80, () => {
         if (this.scene && this.active) {
-          this.burst(sx, sy, 'explosion_particle', 12);
-          this.burst(sx, sy, 'spark_particle', 8);
-          this.burst(sx, sy, 'smoke_plume', 4);
+          this.emitRadial(sx, sy, 'explosion_particle', 12, { speed: { min: 60, max: 250 }, lifespan: 600, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+          this.emitRadial(sx, sy, 'spark_particle', 8, { speed: { min: 40, max: 200 }, lifespan: 400, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+          this.emitRadial(sx, sy, 'smoke_plume', 4, { speed: { min: 10, max: 40 }, speedY: { min: -80, max: -30 }, scale: { start: 2, end: 4 }, alpha: { start: 0.5, end: 0 }, gravityY: -50, blendMode: 'NORMAL', tint: 0x444444 });
         }
       });
     }
@@ -1935,7 +1935,7 @@ export default class GameScene extends Phaser.Scene {
           // Drone air-carrier drops a random bonus
           const drops = ['fuel', 'shield', 'nitro', 'wrench', 'coin'];
           const drop = Phaser.Math.RND.pick(drops);
-          this.burst(x, y, 'spark_particle', 12);
+          this.emitRadial(x, y, 'spark_particle', 12, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
           applyPower(drop);
         },
       };
@@ -2155,7 +2155,7 @@ export default class GameScene extends Phaser.Scene {
     if (this.rain && Math.random() < 0.15) {
       const x = Phaser.Math.Between(0, W);
       const y = Phaser.Math.Between(0, H);
-      this.burst(x, y, 'puddle_ripple', 1);
+      this.emitRadial(x, y, 'puddle_ripple', 1, { speed: { min: 10, max: 30 }, speedY: { min: 50, max: 100 }, scale: { start: 0.8, end: 0 }, alpha: { start: 0.8, end: 0 }, gravityY: 100, blendMode: 'NORMAL', tint: 0xAADDFF });
     }
     
     // Speed lines effect for nitro / high speed
@@ -2186,7 +2186,7 @@ export default class GameScene extends Phaser.Scene {
     this.game.audioManager?.play('explosion');
     this.cameras.main.shake(400, 0.02);
     if (this.player && this.player.active) {
-      this.burst(this.player.x, this.player.y, 'explosion_particle', 24);
+      this.emitRadial(this.player.x, this.player.y, 'explosion_particle', 24, { speed: { min: 60, max: 250 }, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
     }
     
     // Analytics
