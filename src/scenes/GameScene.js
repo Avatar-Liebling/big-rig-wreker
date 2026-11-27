@@ -1502,9 +1502,10 @@ export default class GameScene extends Phaser.Scene {
         continue;
       }
 
-      // Wrecked entities just scroll away while their wreck tween plays
+      // Wrecked entities scroll away, except cars in a spin-out: those are
+      // driven by their own tween and must not be dragged down-screen.
       if (e.wrecked) {
-        e.y += dy;
+        if (!e.spinningOut) e.y += dy;
         if (e.y > H + 80) {
           try { e.destroy(); } catch (_) {}
           this.entities.splice(i, 1);
@@ -1584,11 +1585,17 @@ export default class GameScene extends Phaser.Scene {
         console.error('Collision error:', err);
       }
 
-      // Entity may have destroyed itself during resolveHit
-      if (!e.active || e.wrecked || e.collected || !e.scene || e.destroyed) {
+      // Entity may have destroyed itself during resolveHit.
+      // A wrecking car must stay alive so it can spin out before exploding,
+      // so only collectables and already-destroyed entities are removed here.
+      if (e.collected || !e.scene || e.destroyed || !e.active) {
         if (e.scene && !e.destroyed) {
           try { e.destroy(); } catch (_) {}
         }
+        const idx = this.entities.indexOf(e);
+        if (idx >= 0) this.entities.splice(idx, 1);
+      } else if (e.wrecked && !e.spinningOut) {
+        // Safety net for any wreck path that does not manage its own cleanup.
         const idx = this.entities.indexOf(e);
         if (idx >= 0) this.entities.splice(idx, 1);
       }
@@ -1683,21 +1690,10 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
     if (e.kind === 'car' && e.explosive && !e.wrecked) {
-      // Tanker explodes!
+      // Tanker: spins out like any other wreck, then blows up with the blast
+      // chain reaction once it has come to rest.
       e.wrecked = true;
-      this.wreck(e); // Big points
-      this.emitRadial(e.x, e.y, 'explosion_particle', 20, { speed: { min: 60, max: 250 }, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
-      this.emitRadial(e.x, e.y, 'spark_particle', 15, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
-      this.cameras.main.shake(200, 0.01);
-      // Damage nearby entities
-      for (const other of this.entities) {
-        if (other !== e && !other.wrecked && Phaser.Math.Distance.Between(other.x, other.y, e.x, e.y) < 80) {
-          if (other.kind === 'car' || other.kind === 'police') {
-            other.wrecked = true;
-            this.wreck(other);
-          }
-        }
-      }
+      this.wreck(e, { tanker: true }); // Big points
       return;
     }
     
@@ -1745,7 +1741,7 @@ export default class GameScene extends Phaser.Scene {
     this.wreck(e);
   }
 
-  wreck(e) {
+  wreck(e, options = {}) {
     e.wrecked = true;
     const points = (e.points || (e.kind === 'police' ? 500 : 100)) * this.combo;
     this.score += points;
@@ -1760,47 +1756,105 @@ export default class GameScene extends Phaser.Scene {
     this.game.audioManager?.play(e.kind === 'police' ? 'wreck' : 'crash');
     
     // Hit pause (frame freeze) for impact feel
-    this.time.timeScale = 0.15;
-    this.time.delayedCall(100, () => { this.time.timeScale = 1; });
+    this.time.timeScale = 0.75;
+    this.time.delayedCall(90, () => { this.time.timeScale = 1; });
     
     // Initial impact camera shake
     this.cameras.main.shake(150, 0.01);
     
-    // STEP 1: Push car away briefly (knockback) - IMMEDIATE
-    const knockbackAngle = e.angle + Phaser.Math.Between(-120, 120);
-    const knockbackDist = Phaser.Math.Between(80, 150);
-    const knockbackX = e.x + Math.cos(knockbackAngle * Math.PI / 180) * knockbackDist;
-    const knockbackY = e.y + Math.sin(knockbackAngle * Math.PI / 180) * knockbackDist;
-    
-    // Small debris/sparks at impact point
+    // STEP 1: The car is hit - it spins out and slides before exploding.
+    // `spinningOut` keeps the collision loop from removing it mid-animation.
+    e.spinningOut = true;
+    e.wrecked = true;
+
+    // Push direction: away from the player, with some spread.
+    const awayAngle = Math.atan2(e.y - this.player.y, e.x - this.player.x) * (180 / Math.PI);
+    const pushAngle = (awayAngle + Phaser.Math.Between(-45, 45)) * (Math.PI / 180);
+    const pushSpeed = Phaser.Math.Between(140, 260);
+    const spinDirection = Phaser.Math.RND.pick([-1, 1]);
+    const spinAmount = Phaser.Math.Between(360, 720) * spinDirection;
+
+    // Sparks and glass at the moment of impact.
     this.emitRadial(e.x, e.y, 'spark_particle', 15, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
     this.emitRadial(e.x, e.y, 'spark_shower', 10, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' });
     this.emitRadial(e.x, e.y, 'debris_particle', 8, { speed: { min: 80, max: 300 }, scale: { start: 1.2, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 200, blendMode: 'NORMAL' });
     this.emitRadial(e.x, e.y, 'glass_shard', 6, { speed: { min: 100, max: 350 }, scale: { start: 0.8, end: 0 }, alpha: { start: 0.9, end: 0 }, gravityY: 200, blendMode: 'ADD' });
-    
-    // Screen flash on impact
+
+    // Screen flash on impact.
     this.cameras.main.flash(80, 255, 200, 50, false);
-    
-    // Knockback tween - car gets pushed away
+
+    // Slow the car down over the spin so it slides like a real wreck.
+    if (e.body && typeof e.body.setVelocity === 'function') {
+      e.body.setVelocity(0, 0);
+    }
+
+    // STEP 2: Spin out and slide. The car tumbles and drifts with friction.
     this.tweens.add({
       targets: e,
-      x: knockbackX,
-      y: knockbackY,
-      angle: e.angle + Phaser.Math.Between(-360, 360),
-      scale: 0.8,
-      duration: 300,
-      ease: 'Power2',
+      angle: e.angle + spinAmount,
+      ease: 'Sine.easeOut',
+      duration: 700,
+    });
+
+    this.tweens.add({
+      targets: e,
+      x: e.x + Math.cos(pushAngle) * pushSpeed * 0.35,
+      y: e.y + Math.sin(pushAngle) * pushSpeed * 0.2,
+      ease: 'Quad.easeOut',
+      duration: 700,
       onComplete: () => {
-        // STEP 2: MASSIVE FIERY EXPLOSION at car's new position
+        // Car comes to rest - now it explodes where it stopped.
+        if (!e || !e.scene || e.destroyed) return;
+
+        // STEP 3: MASSIVE FIERY EXPLOSION at the car's final position.
         this.massiveExplosion(e.x, e.y);
-        
-        // STEP 3: Destroy car after explosion
-        this.time.delayedCall(400, () => {
-          if (e && e.scene && !e.destroyed) {
-            e.destroy();
-          }
+
+        // Fade the wreck out instead of popping it out of existence.
+        e.setAlpha(0);
+        this.tweens.add({
+          targets: e,
+          alpha: 0,
+          duration: 250,
+          onComplete: () => {
+            if (e && e.scene && !e.destroyed) e.destroy();
+          },
         });
-      }
+
+        // Remove from the active entity list.
+        const idx = this.entities.indexOf(e);
+        if (idx >= 0) this.entities.splice(idx, 1);
+
+        // A tanker sets off nearby vehicles when it finally goes up.
+        if (options.tanker) {
+          this.emitRadial(e.x, e.y, 'explosion_particle', 20, { speed: { min: 60, max: 250 }, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+          this.emitRadial(e.x, e.y, 'spark_particle', 15, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+          this.cameras.main.shake(200, 0.01);
+
+          // Damage nearby entities.
+          for (const other of [...this.entities]) {
+            if (other !== e && !other.wrecked && other.active && other.scene &&
+                Phaser.Math.Distance.Between(other.x, other.y, e.x, e.y) < 80) {
+              if (other.kind === 'car' || other.kind === 'police') {
+                other.wrecked = true;
+                this.wreck(other);
+              }
+            }
+          }
+        }
+      },
+    });
+
+    // Scorch smoke trailing from the wreck as it spins.
+    this.time.delayedCall(180, () => {
+      if (!e || !e.scene || e.destroyed) return;
+      this.emitRadial(e.x, e.y, 'smoke_plume', 4, {
+        speed: { min: 10, max: 40 },
+        scale: { start: 1, end: 2 },
+        alpha: { start: 0.4, end: 0 },
+        gravityY: -60,
+        blendMode: 'NORMAL',
+        tint: 0x555555,
+      });
     });
   }
 
