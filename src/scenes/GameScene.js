@@ -601,6 +601,9 @@ export default class GameScene extends Phaser.Scene {
     this.boss.setDisplaySize(140, 70);
     this.boss.setAngle(-90);
     this.boss.setDepth(8);
+    // Physics body for collision - narrower than display size for fair collision
+    this.boss.body.setSize(80, 40);
+    this.boss.body.setOffset(30, 15);
     this.boss.kind = 'boss';
     this.boss.vy = 40;
     this.boss.wrecked = false;
@@ -691,31 +694,38 @@ export default class GameScene extends Phaser.Scene {
       if (boss.phase === 1) {
         // Scale boss difficulty: level 10 = very slow, level 20+ = normal
         const isFirstBoss = this.level <= 12;
-        const bossSpeed = isFirstBoss ? 0.3 : 1.0;
-        const bossAttackSpeed = isFirstBoss ? 2.5 : 1.0;
+        const bossSpeed = isFirstBoss ? 0.2 : 1.0; // Even slower
+        const bossAttackSpeed = isFirstBoss ? 3.0 : 1.0;
         
         boss.y += boss.vy * dt * bossSpeed;
-        if (boss.y > (isFirstBoss ? 180 : 120)) boss.vy = isFirstBoss ? 8 : 20; // Stop much further back on first boss
+        // Stop much further back - boss should never overlap player
+        // Player is typically around Y=340, so boss should stop at Y=220
+        const stopY = isFirstBoss ? 220 : 120;
+        if (boss.y > stopY) {
+          boss.y = stopY; // Clamp position
+          boss.vy = 0; // STOP completely
+        }
         
         // Side-to-side sweeping - much slower on first boss
-        boss.x += boss.side * (isFirstBoss ? 15 : 50) * dt;
+        boss.x += boss.side * (isFirstBoss ? 10 : 50) * dt;
         if (boss.x > ROAD_RIGHT - 40 || boss.x < ROAD_LEFT + 40) {
           boss.side *= -1;
         }
         
         // Ram attack - MUCH LESS FREQUENT on first boss
-        const attackInterval = isFirstBoss ? Math.max(6, 8 - this.level * 0.1) : Math.max(2.5, 4 - this.level * 0.15);
+        const attackInterval = isFirstBoss ? Math.max(8, 10 - this.level * 0.1) : Math.max(2.5, 4 - this.level * 0.15);
         if (boss.attackTimer > attackInterval && boss.attackCooldown <= 0) {
           boss.attackTimer = 0;
-          boss.attackCooldown = isFirstBoss ? 6 : 3; // Much longer cooldown
+          boss.attackCooldown = isFirstBoss ? 8 : 3; // Much longer cooldown
           boss.attacking = true;
           // VERTICAL RAM - boss charges down at player (shorter distance on first boss)
-          const targetY = this.player.y + (isFirstBoss ? 60 : 100);
+          // Don't ram all the way to player - stop well short
+          const targetY = this.player.y + (isFirstBoss ? 100 : 100); // Stop 100px below player
           const self = this;
           this.tweens.add({
             targets: boss,
             y: targetY,
-            duration: isFirstBoss ? 1200 : 600, // Much slower ram
+            duration: isFirstBoss ? 1500 : 600, // Much slower ram
             ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
             onComplete: () => { 
               if (!self.boss || !self.boss.active) return;
@@ -741,11 +751,16 @@ export default class GameScene extends Phaser.Scene {
       // Phase 2: Faster, spawns minions - FIRST ENCOUNTER MUCH EASIER
       else if (boss.phase === 2) {
         const isFirstBoss = this.level <= 12;
-        boss.y += boss.vy * dt * (isFirstBoss ? 0.4 : 1.0);
-        boss.x += boss.side * (isFirstBoss ? 40 : 100) * dt;
+        boss.y += boss.vy * dt * (isFirstBoss ? 0.3 : 1.0); // Even slower
+        boss.x += boss.side * (isFirstBoss ? 25 : 100) * dt;
         if (boss.x > ROAD_RIGHT - 40 || boss.x < ROAD_LEFT + 40) boss.side *= -1;
+        // Keep boss further back in phase 2 too - clamp position
+        if (isFirstBoss && boss.y > 200) {
+          boss.y = 200; // Clamp position
+          boss.vy = 0; // Stop moving down
+        }
         
-        if (boss.attackTimer > (isFirstBoss ? 4 : 1.8)) {
+        if (boss.attackTimer > (isFirstBoss ? 6 : 1.8)) {
           boss.attackTimer = 0;
           // Spawn explosive barrels from sides - fewer on first boss
           if (!isFirstBoss || Phaser.Math.Between(0, 1) === 0) {
@@ -761,12 +776,12 @@ export default class GameScene extends Phaser.Scene {
           }
           // Also do a vertical ram - much less often on first boss
           if (boss.attackCooldown <= 0) {
-            boss.attackCooldown = isFirstBoss ? 6 : 2.5;
+            boss.attackCooldown = isFirstBoss ? 8 : 2.5;
             const self = this;
             this.tweens.add({
               targets: boss,
-              y: this.player.y + (isFirstBoss ? 60 : 80),
-              duration: isFirstBoss ? 1000 : 500,
+              y: this.player.y + (isFirstBoss ? 100 : 80), // Stop well short
+              duration: isFirstBoss ? 1200 : 500,
               ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
               onComplete: () => {
                 if (!self.boss || !self.boss.active) return;
@@ -785,8 +800,10 @@ export default class GameScene extends Phaser.Scene {
       }
       // Phase 3: Desperate, charges - MOST AGGRESSIVE (as intended for final phase)
       else {
-        boss.vy = 100; // Was 150, slightly slower vertical
+        boss.vy = 80; // Slower vertical
         boss.y += boss.vy * dt;
+        // Don't let boss get too close to player vertically
+        if (boss.y > this.player.y - 80) boss.y = this.player.y - 80;
         // Charge directly at player - both X and Y
         boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.06); // Was 0.08
         // Constant ramming in phase 3
@@ -795,7 +812,7 @@ export default class GameScene extends Phaser.Scene {
           const self = this;
           this.tweens.add({
             targets: boss,
-            y: this.player.y + 100, // Was 120
+            y: this.player.y + 100, // Stop well below player
             duration: 400, // Was 350
             ease: 'Power3',
             onComplete: () => {
