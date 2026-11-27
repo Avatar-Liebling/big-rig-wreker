@@ -827,6 +827,9 @@ export default class GameScene extends Phaser.Scene {
       }
     }
     
+    // Sync boss physics body with sprite position for accurate collision
+    if (this.boss && this.boss.body) this.boss.body.updateFromGameObject();
+    
     // Boss may have been destroyed during this frame's logic
     if (!this.boss || !this.boss.active) return;
     
@@ -1559,6 +1562,9 @@ export default class GameScene extends Phaser.Scene {
       e.y += dy - (e.vy || 0) * dt;
       if (e.kind === 'power') e.y += Math.sin(this.time.now / 200 + e.x) * 0.2;
 
+      // Sync physics body with sprite position for accurate collision
+      if (e.body) e.body.updateFromGameObject();
+
       // Off-screen cleanup
       if (e.y > H + 80) {
         try { e.destroy(); } catch (_) {}
@@ -1597,6 +1603,11 @@ export default class GameScene extends Phaser.Scene {
           other.y = Phaser.Math.Clamp(other.y, -100, H + 100);
         }
       }
+    }
+
+    // Sync physics bodies after separation pass
+    for (const e of traffic) {
+      if (e.body) e.body.updateFromGameObject();
     }
 
     // --- PASS 3: collision detection with player ---
@@ -1681,8 +1692,9 @@ export default class GameScene extends Phaser.Scene {
       eBottom = entity.y + eH / 2;
     }
 
-    // Check player collision
-    const playerHit = !(pRight < eLeft || pLeft > eRight || pBottom < eTop || pTop > eBottom);
+    // Check player collision - small tolerance for floating-point precision
+    const EPS = 0.5;
+    const playerHit = !(pRight < eLeft - EPS || pLeft > eRight + EPS || pBottom < eTop - EPS || pTop > eBottom + EPS);
 
     // Trailer bounds (centered on trailer) - optional, player collision still works without trailer
     let trailerHit = false;
