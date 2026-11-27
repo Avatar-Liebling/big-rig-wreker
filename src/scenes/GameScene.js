@@ -2009,6 +2009,7 @@ export default class GameScene extends Phaser.Scene {
     
     const p = params[key] || { lifespan: 400, speed: { min: 40, max: 180 }, scale: { start: 1, end: 0 }, blendMode: 'ADD' };
     
+    // CRITICAL: Set high depth so particles render ON TOP of road/street
     this.add.particles(x, y, key, {
       lifespan: p.lifespan,
       speed: p.speed,
@@ -2022,6 +2023,7 @@ export default class GameScene extends Phaser.Scene {
       emitting: false,
       blendMode: p.blendMode,
       tint: p.tint,
+      depth: 200,  // Above everything (road is ~0-50, vehicles ~100)
     }).explode(count);
   }
 
@@ -2030,6 +2032,7 @@ export default class GameScene extends Phaser.Scene {
     const params = {
       debris_particle: { lifespan: 800, speed: { min: 100, max: 300 }, scale: { start: 1.2, end: 0 }, alpha: { start: 0.9, end: 0 }, gravityY: 100, blendMode: 'NORMAL' },
       metal_shard: { lifespan: 1000, speed: { min: 150, max: 500 }, scale: { start: 1.0, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 80, rotate: { min: 0, max: 360 }, blendMode: 'ADD' },
+      fire_ember: { lifespan: 800, speed: { min: 50, max: 200 }, scale: { start: 1.0, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: -30, blendMode: 'ADD' },
     };
     const p = params[key] || { lifespan: 400, speed: { min: 40, max: 180 }, scale: { start: 1, end: 0 }, blendMode: 'ADD' };
     
@@ -2048,6 +2051,7 @@ export default class GameScene extends Phaser.Scene {
         emitting: false,
         blendMode: p.blendMode,
         tint: p.tint,
+        depth: 200,
       }).explode(1);
     }
   }
