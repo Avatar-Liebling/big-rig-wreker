@@ -1867,20 +1867,26 @@ export default class GameScene extends Phaser.Scene {
             this.emitRadial(this.player.x, this.player.y, 'spark_particle', 8, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
           }
           
-          this.emitRadial(e.x, e.y, 'explosion_particle', 20, { speed: { min: 60, max: 250 }, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
-          this.emitRadial(e.x, e.y, 'spark_particle', 15, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
-          this.cameras.main.shake(200, 0.01);
-
-          // Damage nearby entities.
+          // Tanker blast wrecks nearby vehicles in a large radius
+          const tankerVehicleBlastRadius = 220;
           for (const other of [...this.entities]) {
-            if (other !== e && !other.wrecked && other.active && other.scene &&
-                Phaser.Math.Distance.Between(other.x, other.y, e.x, e.y) < 80) {
-              if (other.kind === 'car' || other.kind === 'police') {
+            if (other && other.active && !other.wrecked && other.scene &&
+                (other.kind === 'car' || other.kind === 'police' || other.kind === 'hard' || other.kind === 'container' || other.kind === 'debris')) {
+              const dist = Phaser.Math.Distance.Between(other.x, other.y, e.x, e.y);
+              if (dist < tankerVehicleBlastRadius) {
                 other.wrecked = true;
+                const points = (other.points || (other.kind === 'police' ? 500 : 100)) * this.combo;
+                this.score += points;
+                this.carsWrecked += 1;
+                this.floatText(other.x, other.y, '+' + points, '#ffcc00');
                 this.wreck(other);
               }
             }
           }
+          
+          this.emitRadial(e.x, e.y, 'explosion_particle', 20, { speed: { min: 60, max: 250 }, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+          this.emitRadial(e.x, e.y, 'spark_particle', 15, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+          this.cameras.main.shake(200, 0.01);
         }
       },
     });
@@ -1911,6 +1917,24 @@ export default class GameScene extends Phaser.Scene {
     } else if (distToPlayer < blastRadius && this.shieldTime > 0) {
       // Shield blocks blast but shows effect
       this.emitRadial(this.player.x, this.player.y, 'spark_particle', 8, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+    }
+    
+    // Wreck nearby vehicles in blast radius
+    const vehicleBlastRadius = 160; // slightly smaller than player blast radius
+    for (const other of [...this.entities]) {
+      if (other && other.active && !other.wrecked && other.scene &&
+          (other.kind === 'car' || other.kind === 'police' || other.kind === 'hard' || other.kind === 'container' || other.kind === 'debris')) {
+        const dist = Phaser.Math.Distance.Between(other.x, other.y, x, y);
+        if (dist < vehicleBlastRadius) {
+          other.wrecked = true;
+          // Award points for vehicles caught in blast
+          const points = (other.points || (other.kind === 'police' ? 500 : 100)) * this.combo;
+          this.score += points;
+          this.carsWrecked += 1;
+          this.floatText(other.x, other.y, '+' + points, '#ffcc00');
+          this.wreck(other);
+        }
+      }
     }
     
     // Big camera shake for explosion
