@@ -1759,22 +1759,44 @@ export default class GameScene extends Phaser.Scene {
     if (this.combo > 2) this.comboText.setText('x' + this.combo + ' COMBO!');
     this.game.audioManager?.play(e.kind === 'police' ? 'wreck' : 'crash');
     
-    // Hit pause (frame freeze) for impact feel
-    this.time.timeScale = 0.3;
-    this.time.delayedCall(50, () => { this.time.timeScale = 1; });
+    // Hit pause (frame freeze) for impact feel - LONGER
+    this.time.timeScale = 0.2;
+    this.time.delayedCall(80, () => { this.time.timeScale = 1; });
     
-    this.cameras.main.shake(180, 0.008);
-    this.burst(e.x, e.y, 'explosion_particle', 16);
-    this.burst(e.x, e.y, 'spark_particle', 10);
+    // BIGGER camera shake
+    this.cameras.main.shake(250, 0.015);
     
-    // NEW: Debris and glass shards
-    this.burst(e.x, e.y, 'debris_particle', 12);
-    this.burst(e.x, e.y, 'glass_shard', 8);
+    // MASSIVE explosion particles
+    this.burst(e.x, e.y, 'explosion_particle', 30);
+    this.burst(e.x, e.y, 'explosion_particle_large', 12);
+    this.burst(e.x, e.y, 'spark_particle', 20);
+    this.burst(e.x, e.y, 'spark_particle_large', 10);
+    
+    // Debris and glass shards - MORE
+    this.burst(e.x, e.y, 'debris_particle', 25);
+    this.burst(e.x, e.y, 'glass_shard', 18);
+    this.burst(e.x, e.y, 'metal_shard', 15);
     // Spark shower
-    this.burst(e.x, e.y, 'spark_shower', 15);
+    this.burst(e.x, e.y, 'spark_shower', 25);
+    this.burst(e.x, e.y, 'spark_shower_white', 15);
     
-    // Screen flash for heavy impact
-    this.cameras.main.flash(100, 255, 100, 50, false);
+    // Shockwave ring effect
+    this.burst(e.x, e.y, 'shockwave_ring', 1);
+    this.burst(e.x, e.y, 'shockwave_ring', 1);
+    
+    // Directional debris cones
+    this.burstCone(e.x, e.y, 'debris_particle', 12, e.angle - 90, 60);
+    this.burstCone(e.x, e.y, 'debris_particle', 12, e.angle + 90, 60);
+    
+    // Smoke plumes
+    this.burst(e.x, e.y, 'smoke_plume', 8);
+    this.burst(e.x, e.y, 'black_smoke', 6);
+    
+    // Screen flash for heavy impact - MORE INTENSE
+    this.cameras.main.flash(150, 255, 150, 50, false);
+    this.time.delayedCall(50, () => {
+      this.cameras.main.flash(100, 255, 255, 200, false);
+    });
 
     // Analytics
     if (this.analytics) {
@@ -1782,13 +1804,31 @@ export default class GameScene extends Phaser.Scene {
       this.analytics.trackScore(this.score);
     }
     
+    // More dramatic car destruction - flies apart
+    const flyAngle = e.angle + Phaser.Math.Between(-150, 150);
+    const flyDist = Phaser.Math.Between(150, 300);
+    const flyX = e.x + Math.cos(flyAngle * Math.PI / 180) * flyDist;
+    const flyY = e.y + Math.sin(flyAngle * Math.PI / 180) * flyDist;
+    
     this.tweens.add({
       targets: e,
-      angle: e.angle + Phaser.Math.Between(-180, 180),
-      x: e.x + Phaser.Math.Between(-80, 80),
+      angle: e.angle + Phaser.Math.Between(-720, 720), // Multiple spins
+      x: flyX,
+      y: flyY,
       alpha: 0,
-      duration: 500,
+      scale: 0.3,
+      duration: 800,
+      ease: 'Power2',
       onComplete: () => e.destroy(),
+    });
+    
+    // Secondary explosion after a moment
+    this.time.delayedCall(200, () => {
+      if (this.scene && this.active) {
+        this.burst(e.x, e.y, 'explosion_particle', 15);
+        this.burst(e.x, e.y, 'spark_particle', 10);
+        this.burst(e.x, e.y, 'smoke_plume', 6);
+      }
     });
   }
 
@@ -1904,10 +1944,17 @@ export default class GameScene extends Phaser.Scene {
     // Adjust parameters based on particle type for better visibility
     const params = {
       explosion_particle: { lifespan: 600, speed: { min: 60, max: 250 }, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' },
+      explosion_particle_large: { lifespan: 900, speed: { min: 80, max: 350 }, scale: { start: 2.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' },
       spark_particle: { lifespan: 400, speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' },
+      spark_particle_large: { lifespan: 600, speed: { min: 60, max: 300 }, scale: { start: 1.8, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' },
+      spark_shower_white: { lifespan: 500, speed: { min: 120, max: 500 }, scale: { start: 0.8, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' },
       debris_particle: { lifespan: 800, speed: { min: 50, max: 220 }, scale: { start: 1.2, end: 0 }, alpha: { start: 0.9, end: 0 }, gravityY: 100, blendMode: 'NORMAL' },
+      metal_shard: { lifespan: 1000, speed: { min: 100, max: 400 }, scale: { start: 1.0, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 80, rotate: { min: 0, max: 360 }, blendMode: 'ADD' },
       glass_shard: { lifespan: 600, speed: { min: 80, max: 300 }, scale: { start: 0.8, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 150, rotate: { min: 0, max: 360 }, blendMode: 'ADD' },
       spark_shower: { lifespan: 500, speed: { min: 100, max: 400 }, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 50, blendMode: 'ADD' },
+      shockwave_ring: { lifespan: 400, speed: { min: 0, max: 0 }, scale: { start: 0.5, end: 3.0 }, alpha: { start: 0.8, end: 0 }, blendMode: 'ADD', quantity: 1 },
+      smoke_plume: { lifespan: 1200, speed: { min: 10, max: 40 }, speedY: { min: -80, max: -30 }, scale: { start: 1.5, end: 3.0 }, alpha: { start: 0.4, end: 0 }, gravityY: -20, blendMode: 'NORMAL' },
+      black_smoke: { lifespan: 1500, speed: { min: 5, max: 20 }, speedY: { min: -60, max: -20 }, scale: { start: 2.0, end: 4.0 }, alpha: { start: 0.5, end: 0 }, gravityY: -10, tint: 0x111111, blendMode: 'NORMAL' },
       tire_smoke: { lifespan: 500, speed: { min: 20, max: 60 }, speedY: { min: 10, max: 40 }, scale: { start: 1, end: 1.5 }, alpha: { start: 0.5, end: 0 }, gravityY: 30, blendMode: 'NORMAL' },
       puddle_ripple: { lifespan: 300, speed: { min: 10, max: 30 }, speedY: { min: 50, max: 100 }, scale: { start: 0.8, end: 0 }, alpha: { start: 0.8, end: 0 }, gravityY: 100, blendMode: 'NORMAL', tint: 0xAADDFF },
     };
@@ -1928,6 +1975,33 @@ export default class GameScene extends Phaser.Scene {
       blendMode: p.blendMode,
       tint: p.tint,
     }).explode(count);
+  }
+
+  // Directional cone burst for directional debris
+  burstCone(x, y, key, count, centerAngleDeg, spreadDeg) {
+    const params = {
+      debris_particle: { lifespan: 800, speed: { min: 100, max: 300 }, scale: { start: 1.2, end: 0 }, alpha: { start: 0.9, end: 0 }, gravityY: 100, blendMode: 'NORMAL' },
+      metal_shard: { lifespan: 1000, speed: { min: 150, max: 500 }, scale: { start: 1.0, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 80, rotate: { min: 0, max: 360 }, blendMode: 'ADD' },
+    };
+    const p = params[key] || { lifespan: 400, speed: { min: 40, max: 180 }, scale: { start: 1, end: 0 }, blendMode: 'ADD' };
+    
+    for (let i = 0; i < count; i++) {
+      const angle = centerAngleDeg + Phaser.Math.Between(-spreadDeg / 2, spreadDeg / 2);
+      const angleRad = angle * Math.PI / 180;
+      this.add.particles(x, y, key, {
+        lifespan: p.lifespan,
+        speedX: { min: Math.cos(angleRad) * p.speed.min, max: Math.cos(angleRad) * p.speed.max },
+        speedY: { min: Math.sin(angleRad) * p.speed.min, max: Math.sin(angleRad) * p.speed.max },
+        scale: p.scale,
+        alpha: p.alpha,
+        gravityY: p.gravityY,
+        rotate: p.rotate,
+        quantity: 1,
+        emitting: false,
+        blendMode: p.blendMode,
+        tint: p.tint,
+      }).explode(1);
+    }
   }
 
   floatText(x, y, msg, color) {

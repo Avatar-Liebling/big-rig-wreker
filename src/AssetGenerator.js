@@ -1337,6 +1337,107 @@ export default class AssetGenerator {
         g.fillCircle(x, y, 0.5 + Math.random() * 1);
       }
     });
+
+    // EXPLOSION PARTICLE LARGE (16x16) — bigger explosion fragments
+    makeTexture('explosion_particle_large', 16, 16, (g) => {
+      // Outer red glow
+      g.fillStyle(0xFF3300, 0.4);
+      g.fillCircle(8, 8, 8);
+      // Orange mid
+      g.fillStyle(0xFF6600, 0.7);
+      g.fillCircle(8, 8, 6);
+      // Yellow
+      g.fillStyle(0xFFCC00, 0.9);
+      g.fillCircle(8, 8, 4);
+      // White hot core
+      g.fillStyle(0xFFFFAA, 1.0);
+      g.fillCircle(8, 8, 2);
+      // Tiny white center
+      g.fillStyle(0xFFFFFF, 1.0);
+      g.fillCircle(8, 8, 1);
+    });
+
+    // SPARK PARTICLE LARGE (8x8) — bigger sparks
+    makeTexture('spark_particle_large', 8, 8, (g) => {
+      g.fillStyle(0xFFFF00, 0.6);
+      g.fillCircle(4, 4, 4);
+      g.fillStyle(0xFFFFAA, 0.9);
+      g.fillCircle(4, 4, 2.5);
+      g.fillStyle(0xFFFFFF, 1.0);
+      g.fillCircle(4, 4, 1.2);
+    });
+
+    // SPARK SHOWER WHITE (8x8) — bright white sparks
+    makeTexture('spark_shower_white', 8, 8, (g) => {
+      for (let i = 0; i < 8; i++) {
+        const x = 1 + Math.random() * 6;
+        const y = 1 + Math.random() * 6;
+        const color = [0xFFFFFF, 0xFFFFAA, 0xFFEE88][Math.floor(Math.random() * 3)];
+        g.fillStyle(color, 0.9);
+        g.fillCircle(x, y, 0.8 + Math.random() * 1.2);
+      }
+    });
+
+    // METAL SHARD (8x12) — angular metal fragments
+    makeTexture('metal_shard', 8, 12, (g) => {
+      // Random angular shape
+      const points = [];
+      const cx = 4, cy = 6;
+      const numPoints = 5 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < numPoints; i++) {
+        const angle = (i / numPoints) * Math.PI * 2 + Math.random() * 0.4;
+        const radius = 2 + Math.random() * 2.5;
+        points.push(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
+      }
+      g.fillStyle(0xAAAAAA, 1.0);
+      g.fillPoints(points, true);
+      g.fillStyle(0xCCCCCC, 0.7);
+      g.fillPoints(points.map((v, i) => i % 2 === 0 ? v * 0.6 + cx * 0.4 : v * 0.6 + cy * 0.4), true);
+      // Highlight edge
+      g.lineStyle(1, 0xEEEEEE, 0.8);
+      g.strokePoints(points, true);
+    });
+
+    // SHOCKWAVE RING (64x64) — expanding ring effect
+    makeTexture('shockwave_ring', 64, 64, (g) => {
+      g.lineStyle(4, 0xFF8800, 0.8);
+      g.strokeCircle(32, 32, 28);
+      g.lineStyle(2, 0xFFCC00, 0.6);
+      g.strokeCircle(32, 32, 20);
+      g.lineStyle(1, 0xFFFFAA, 0.4);
+      g.strokeCircle(32, 32, 12);
+    });
+
+    // SMOKE PLUME (32x32) — rising smoke column
+    makeTexture('smoke_plume', 32, 32, (g) => {
+      // Main plume body
+      g.fillStyle(0x666666, 0.15);
+      g.fillEllipse(16, 16, 28, 28);
+      g.fillStyle(0x777777, 0.2);
+      g.fillEllipse(16, 12, 24, 20);
+      g.fillStyle(0x888888, 0.25);
+      g.fillEllipse(16, 8, 18, 14);
+      g.fillStyle(0x999999, 0.2);
+      g.fillEllipse(16, 4, 12, 8);
+      // Wisps
+      g.fillStyle(0x777777, 0.1);
+      g.fillEllipse(8, 20, 12, 8);
+      g.fillStyle(0x888888, 0.1);
+      g.fillEllipse(24, 18, 10, 6);
+    });
+
+    // BLACK SMOKE (32x32) — thick black smoke
+    makeTexture('black_smoke', 32, 32, (g) => {
+      g.fillStyle(0x111111, 0.3);
+      g.fillEllipse(16, 16, 30, 30);
+      g.fillStyle(0x222222, 0.4);
+      g.fillEllipse(16, 12, 24, 24);
+      g.fillStyle(0x333333, 0.5);
+      g.fillEllipse(16, 8, 18, 18);
+      g.fillStyle(0x000000, 0.6);
+      g.fillEllipse(16, 4, 12, 12);
+    });
+
     // =========================================================================
     // 24. BUILDING 1 (60x80)
     // =========================================================================
