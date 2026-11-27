@@ -650,20 +650,20 @@ export default class GameScene extends Phaser.Scene {
     
     if (this.bossChaseMode) {
       this.bossChaseTimer -= dt;
-      // Chase player vertically and horizontally - AGGRESSIVE
-      boss.y = Phaser.Math.Linear(boss.y, this.player.y - 60, 0.05); // Stay close behind player
-      boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.08); // Faster horizontal tracking
+      // Chase player vertically and horizontally - LESS AGGRESSIVE
+      boss.y = Phaser.Math.Linear(boss.y, this.player.y - 80, 0.03); // Stay further behind player, slower
+      boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.05); // Slower horizontal tracking
       
-      // More aggressive ramming during chase - VERTICAL RAM ATTACK
-      if (boss.attackTimer > 0.8 && boss.attackCooldown <= 0) {
+      // Less aggressive ramming during chase
+      if (boss.attackTimer > 1.5 && boss.attackCooldown <= 0) {
         boss.attackTimer = 0;
-        boss.attackCooldown = 1.2;
+        boss.attackCooldown = 2.0;
         // Ram vertically downward at player
         const self = this;
         this.tweens.add({
           targets: boss,
-          y: this.player.y + 100, // Ram past player
-          duration: 400,
+          y: this.player.y + 80, // Ram past player but not as far
+          duration: 500,
           ease: 'Power2',
           onComplete: () => { 
             if (!self.boss || !self.boss.active) return;
@@ -675,8 +675,8 @@ export default class GameScene extends Phaser.Scene {
           }
         });
         // Visual indicator of ram
-        this.burst(boss.x, boss.y, 'spark_shower', 8);
-        this.cameras.main.shake(80, 0.006);
+        this.burst(boss.x, boss.y, 'spark_shower', 6);
+        this.cameras.main.shake(60, 0.005);
       }
       
       if (this.bossChaseTimer <= 0) {
@@ -684,30 +684,30 @@ export default class GameScene extends Phaser.Scene {
       }
     } else {
       // Normal behavior when not chasing
-      // Phase 1: Slow approach, ram attempts
+      // Phase 1: Slow approach, ram attempts - LESS AGGRESSIVE
       if (boss.phase === 1) {
         boss.y += boss.vy * dt;
-        if (boss.y > 150) boss.vy = 30; // Faster approach
+        if (boss.y > 120) boss.vy = 20; // Slower approach, stop further back
         
-        // Side-to-side sweeping
-        boss.x += boss.side * 80 * dt;
+        // Side-to-side sweeping - slower
+        boss.x += boss.side * 50 * dt; // Was 80
         if (boss.x > ROAD_RIGHT - 40 || boss.x < ROAD_LEFT + 40) {
           boss.side *= -1;
         }
         
-        // Ram attack - more frequent at higher levels
-        const attackInterval = Math.max(1.5, 3 - this.level * 0.2);
+        // Ram attack - LESS FREQUENT
+        const attackInterval = Math.max(2.5, 4 - this.level * 0.15); // Was 1.5, 3 - 0.2
         if (boss.attackTimer > attackInterval && boss.attackCooldown <= 0) {
           boss.attackTimer = 0;
-          boss.attackCooldown = 2;
+          boss.attackCooldown = 3; // Was 2
           boss.attacking = true;
           // VERTICAL RAM - boss charges down at player
-          const targetY = this.player.y + 120; // Target below player to ram through
+          const targetY = this.player.y + 100; // Was 120, less overlap
           const self = this;
           this.tweens.add({
             targets: boss,
             y: targetY,
-            duration: 500,
+            duration: 600, // Was 500, slower ram
             ease: 'Power2',
             onComplete: () => { 
               if (!self.boss || !self.boss.active) return;
@@ -720,8 +720,8 @@ export default class GameScene extends Phaser.Scene {
             }
           });
           // Visual indicator of ram
-          this.burst(boss.x, boss.y, 'spark_shower', 6);
-          this.cameras.main.shake(60, 0.005);
+          this.burst(boss.x, boss.y, 'spark_shower', 5); // Was 6
+          this.cameras.main.shake(50, 0.004); // Was 60, 0.005
         }
         
         if (this.bossHealth < this.bossMaxHealth * 0.6) {
@@ -730,13 +730,13 @@ export default class GameScene extends Phaser.Scene {
           this.game.audioManager?.play('wreck');
         }
       }
-      // Phase 2: Faster, spawns minions
+      // Phase 2: Faster, spawns minions - STILL AGGRESSIVE BUT MANAGEABLE
       else if (boss.phase === 2) {
         boss.y += boss.vy * dt;
-        boss.x += boss.side * 160 * dt; // Faster sweeping
+        boss.x += boss.side * 100 * dt; // Was 160, slower sweeping
         if (boss.x > ROAD_RIGHT - 40 || boss.x < ROAD_LEFT + 40) boss.side *= -1;
         
-        if (boss.attackTimer > 1.2) {
+        if (boss.attackTimer > 1.8) { // Was 1.2
           boss.attackTimer = 0;
           // Spawn explosive barrels from sides
           const side = Phaser.Math.Between(0, 1) ? ROAD_LEFT + 30 : ROAD_RIGHT - 30;
@@ -748,14 +748,14 @@ export default class GameScene extends Phaser.Scene {
           barrel.wrecked = false;
           barrel.fromBoss = true;
           this.entities.push(barrel);
-          // Also do a vertical ram
+          // Also do a vertical ram - less often
           if (boss.attackCooldown <= 0) {
-            boss.attackCooldown = 1.5;
+            boss.attackCooldown = 2.5; // Was 1.5
             const self = this;
             this.tweens.add({
               targets: boss,
-              y: this.player.y + 100,
-              duration: 400,
+              y: this.player.y + 80, // Was 100
+              duration: 500, // Was 400
               ease: 'Power2',
               onComplete: () => {
                 if (!self.boss || !self.boss.active) return;
@@ -763,7 +763,7 @@ export default class GameScene extends Phaser.Scene {
                 self.bossAttackCount++;
               }
             });
-            this.burst(boss.x, boss.y, 'spark_shower', 8);
+            this.burst(boss.x, boss.y, 'spark_shower', 6); // Was 8
           }
         }
         
@@ -772,20 +772,20 @@ export default class GameScene extends Phaser.Scene {
           this.flashBanner('FINAL PHASE!');
         }
       }
-      // Phase 3: Desperate, charges
+      // Phase 3: Desperate, charges - MOST AGGRESSIVE (as intended for final phase)
       else {
-        boss.vy = 150; // Faster vertical
+        boss.vy = 100; // Was 150, slightly slower vertical
         boss.y += boss.vy * dt;
         // Charge directly at player - both X and Y
-        boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.08);
+        boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.06); // Was 0.08
         // Constant ramming in phase 3
         if (boss.attackCooldown <= 0) {
-          boss.attackCooldown = 1.0;
+          boss.attackCooldown = 1.5; // Was 1.0
           const self = this;
           this.tweens.add({
             targets: boss,
-            y: this.player.y + 120,
-            duration: 350,
+            y: this.player.y + 100, // Was 120
+            duration: 400, // Was 350
             ease: 'Power3',
             onComplete: () => {
               if (!self.boss || !self.boss.active) return;
@@ -793,8 +793,8 @@ export default class GameScene extends Phaser.Scene {
               self.bossAttackCount++;
             }
           });
-          this.burst(boss.x, boss.y, 'spark_shower', 10);
-          this.cameras.main.shake(100, 0.008);
+          this.burst(boss.x, boss.y, 'spark_shower', 8); // Was 10
+          this.cameras.main.shake(80, 0.006); // Was 100, 0.008
         }
       }
     }
