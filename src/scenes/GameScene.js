@@ -174,7 +174,9 @@ export default class GameScene extends Phaser.Scene {
     this.player.setDisplaySize(92, 46);
     this.player.setAngle(-90);
     this.player.setDepth(10);
-    this.player.body.setSize(70, 34);
+    // Physics body for collision - wider at front (cab) since truck faces up (-90 deg)
+    this.player.body.setSize(56, 40);
+    this.player.body.setOffset(17, 3);
     this.player.setCollideWorldBounds(true);
 
     this.trailer = this.add.image(this.player.x, this.player.y + 62, 'trailer');
@@ -183,7 +185,8 @@ export default class GameScene extends Phaser.Scene {
     this.trailer.setDepth(9);
     
     // Collision bounds for player + trailer (used for precise collision)
-    this.playerBounds = { width: 70, height: 34 };
+    // Player bounds: wider at front (cab) to cover the front collision area properly
+    this.playerBounds = { width: 56, height: 40 };
     this.trailerBounds = { width: 62, height: 32 };
 
     // Enhanced exhaust with multiple layers - MORE VISIBLE
@@ -684,31 +687,36 @@ export default class GameScene extends Phaser.Scene {
       }
     } else {
       // Normal behavior when not chasing
-      // Phase 1: Slow approach, ram attempts - LESS AGGRESSIVE
+      // Phase 1: Slow approach, ram attempts - FIRST ENCOUNTER (level 10) IS MUCH EASIER
       if (boss.phase === 1) {
-        boss.y += boss.vy * dt;
-        if (boss.y > 120) boss.vy = 20; // Slower approach, stop further back
+        // Scale boss difficulty: level 10 = very slow, level 20+ = normal
+        const isFirstBoss = this.level <= 12;
+        const bossSpeed = isFirstBoss ? 0.3 : 1.0;
+        const bossAttackSpeed = isFirstBoss ? 2.5 : 1.0;
         
-        // Side-to-side sweeping - slower
-        boss.x += boss.side * 50 * dt; // Was 80
+        boss.y += boss.vy * dt * bossSpeed;
+        if (boss.y > (isFirstBoss ? 180 : 120)) boss.vy = isFirstBoss ? 8 : 20; // Stop much further back on first boss
+        
+        // Side-to-side sweeping - much slower on first boss
+        boss.x += boss.side * (isFirstBoss ? 15 : 50) * dt;
         if (boss.x > ROAD_RIGHT - 40 || boss.x < ROAD_LEFT + 40) {
           boss.side *= -1;
         }
         
-        // Ram attack - LESS FREQUENT
-        const attackInterval = Math.max(2.5, 4 - this.level * 0.15); // Was 1.5, 3 - 0.2
+        // Ram attack - MUCH LESS FREQUENT on first boss
+        const attackInterval = isFirstBoss ? Math.max(6, 8 - this.level * 0.1) : Math.max(2.5, 4 - this.level * 0.15);
         if (boss.attackTimer > attackInterval && boss.attackCooldown <= 0) {
           boss.attackTimer = 0;
-          boss.attackCooldown = 3; // Was 2
+          boss.attackCooldown = isFirstBoss ? 6 : 3; // Much longer cooldown
           boss.attacking = true;
-          // VERTICAL RAM - boss charges down at player
-          const targetY = this.player.y + 100; // Was 120, less overlap
+          // VERTICAL RAM - boss charges down at player (shorter distance on first boss)
+          const targetY = this.player.y + (isFirstBoss ? 60 : 100);
           const self = this;
           this.tweens.add({
             targets: boss,
             y: targetY,
-            duration: 600, // Was 500, slower ram
-            ease: 'Power2',
+            duration: isFirstBoss ? 1200 : 600, // Much slower ram
+            ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
             onComplete: () => { 
               if (!self.boss || !self.boss.active) return;
               self.boss.side = this.player.x < self.boss.x ? -1 : 1; 
@@ -721,7 +729,7 @@ export default class GameScene extends Phaser.Scene {
           });
           // Visual indicator of ram
           this.emitRadial(boss.x, boss.y, 'spark_shower', 5, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' });
-          this.cameras.main.shake(50, 0.004); // Was 60, 0.005
+          this.cameras.main.shake(50, 0.004);
         }
         
         if (this.bossHealth < this.bossMaxHealth * 0.6) {
@@ -730,40 +738,43 @@ export default class GameScene extends Phaser.Scene {
           this.game.audioManager?.play('wreck');
         }
       }
-      // Phase 2: Faster, spawns minions - STILL AGGRESSIVE BUT MANAGEABLE
+      // Phase 2: Faster, spawns minions - FIRST ENCOUNTER MUCH EASIER
       else if (boss.phase === 2) {
-        boss.y += boss.vy * dt;
-        boss.x += boss.side * 100 * dt; // Was 160, slower sweeping
+        const isFirstBoss = this.level <= 12;
+        boss.y += boss.vy * dt * (isFirstBoss ? 0.4 : 1.0);
+        boss.x += boss.side * (isFirstBoss ? 40 : 100) * dt;
         if (boss.x > ROAD_RIGHT - 40 || boss.x < ROAD_LEFT + 40) boss.side *= -1;
         
-        if (boss.attackTimer > 1.8) { // Was 1.2
+        if (boss.attackTimer > (isFirstBoss ? 4 : 1.8)) {
           boss.attackTimer = 0;
-          // Spawn explosive barrels from sides
-          const side = Phaser.Math.Between(0, 1) ? ROAD_LEFT + 30 : ROAD_RIGHT - 30;
-          const barrel = this.physics.add.sprite(side, boss.y, 'barrel');
-          barrel.setDisplaySize(22, 22);
-          barrel.setDepth(5);
-          barrel.kind = 'hard';
-          barrel.vy = 0;
-          barrel.wrecked = false;
-          barrel.fromBoss = true;
-          this.entities.push(barrel);
-          // Also do a vertical ram - less often
+          // Spawn explosive barrels from sides - fewer on first boss
+          if (!isFirstBoss || Phaser.Math.Between(0, 1) === 0) {
+            const side = Phaser.Math.Between(0, 1) ? ROAD_LEFT + 30 : ROAD_RIGHT - 30;
+            const barrel = this.physics.add.sprite(side, boss.y, 'barrel');
+            barrel.setDisplaySize(22, 22);
+            barrel.setDepth(5);
+            barrel.kind = 'hard';
+            barrel.vy = 0;
+            barrel.wrecked = false;
+            barrel.fromBoss = true;
+            this.entities.push(barrel);
+          }
+          // Also do a vertical ram - much less often on first boss
           if (boss.attackCooldown <= 0) {
-            boss.attackCooldown = 2.5; // Was 1.5
+            boss.attackCooldown = isFirstBoss ? 6 : 2.5;
             const self = this;
             this.tweens.add({
               targets: boss,
-              y: this.player.y + 80, // Was 100
-              duration: 500, // Was 400
-              ease: 'Power2',
+              y: this.player.y + (isFirstBoss ? 60 : 80),
+              duration: isFirstBoss ? 1000 : 500,
+              ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
               onComplete: () => {
                 if (!self.boss || !self.boss.active) return;
                 self.boss.attacking = false;
                 self.bossAttackCount++;
               }
             });
-            this.emitRadial(boss.x, boss.y, 'spark_shower', 6, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' }); // Was 8
+            this.emitRadial(boss.x, boss.y, 'spark_shower', 6, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' });
           }
         }
         
@@ -1617,21 +1628,41 @@ export default class GameScene extends Phaser.Scene {
     // Safety check - entity must be valid
     if (!entity || !entity.active || !entity.scene || entity.destroyed) return false;
     
-    // Player bounds (centered on player)
-    const pW = this.playerBounds?.width || 70;
-    const pH = this.playerBounds?.height || 34;
-    const pLeft = this.player.x - pW / 2;
-    const pRight = this.player.x + pW / 2;
-    const pTop = this.player.y - pH / 2;
-    const pBottom = this.player.y + pH / 2;
+    // Player bounds - use physics body for accuracy (accounts for body offset)
+    let pLeft, pRight, pTop, pBottom;
+    if (this.player.body) {
+      // Physics body bounds are more accurate when body has offset
+      const body = this.player.body;
+      pLeft = body.left;
+      pRight = body.right;
+      pTop = body.top;
+      pBottom = body.bottom;
+    } else {
+      // Fallback to visual bounds
+      const pW = this.playerBounds?.width || 70;
+      const pH = this.playerBounds?.height || 34;
+      pLeft = this.player.x - pW / 2;
+      pRight = this.player.x + pW / 2;
+      pTop = this.player.y - pH / 2;
+      pBottom = this.player.y + pH / 2;
+    }
 
-    // Entity bounds - use display size for accuracy (with fallbacks)
-    const eW = (entity.displayWidth || 30) * 0.8;
-    const eH = (entity.displayHeight || 30) * 0.8;
-    const eLeft = entity.x - eW / 2;
-    const eRight = entity.x + eW / 2;
-    const eTop = entity.y - eH / 2;
-    const eBottom = entity.y + eH / 2;
+    // Entity bounds - use physics body if available for accuracy
+    let eLeft, eRight, eTop, eBottom;
+    if (entity.body) {
+      eLeft = entity.body.left;
+      eRight = entity.body.right;
+      eTop = entity.body.top;
+      eBottom = entity.body.bottom;
+    } else {
+      // Fallback to visual bounds
+      const eW = (entity.displayWidth || 30) * 0.8;
+      const eH = (entity.displayHeight || 30) * 0.8;
+      eLeft = entity.x - eW / 2;
+      eRight = entity.x + eW / 2;
+      eTop = entity.y - eH / 2;
+      eBottom = entity.y + eH / 2;
+    }
 
     // Check player collision
     const playerHit = !(pRight < eLeft || pLeft > eRight || pBottom < eTop || pTop > eBottom);
@@ -1826,6 +1857,16 @@ export default class GameScene extends Phaser.Scene {
 
         // A tanker sets off nearby vehicles when it finally goes up.
         if (options.tanker) {
+          // Tanker blast damages player too
+          const tankerBlastRadius = 200;
+          const distToPlayer = Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y);
+          if (distToPlayer < tankerBlastRadius && this.shieldTime <= 0) {
+            const dmg = Math.round(40 * (1 - distToPlayer / tankerBlastRadius));
+            if (dmg > 0) this.damage(dmg);
+          } else if (distToPlayer < tankerBlastRadius && this.shieldTime > 0) {
+            this.emitRadial(this.player.x, this.player.y, 'spark_particle', 8, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+          }
+          
           this.emitRadial(e.x, e.y, 'explosion_particle', 20, { speed: { min: 60, max: 250 }, scale: { start: 1.5, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
           this.emitRadial(e.x, e.y, 'spark_particle', 15, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
           this.cameras.main.shake(200, 0.01);
@@ -1860,6 +1901,18 @@ export default class GameScene extends Phaser.Scene {
 
   // Separate massive explosion function for clarity
   massiveExplosion(x, y) {
+    // Blast radius damage to player
+    const blastRadius = 180; // px - generous radius so near-misses hurt
+    const distToPlayer = Phaser.Math.Distance.Between(this.player.x, this.player.y, x, y);
+    if (distToPlayer < blastRadius && this.shieldTime <= 0) {
+      // Damage scales with proximity - up to 35 at point-blank
+      const dmg = Math.round(35 * (1 - distToPlayer / blastRadius));
+      if (dmg > 0) this.damage(dmg);
+    } else if (distToPlayer < blastRadius && this.shieldTime > 0) {
+      // Shield blocks blast but shows effect
+      this.emitRadial(this.player.x, this.player.y, 'spark_particle', 8, { speed: { min: 40, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' });
+    }
+    
     // Big camera shake for explosion
     this.cameras.main.shake(300, 0.02);
     
