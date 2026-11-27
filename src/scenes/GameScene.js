@@ -499,7 +499,7 @@ export default class GameScene extends Phaser.Scene {
     this.pauseLayer.setVisible(this.paused);
     this.physics.world.isPaused = this.paused;
     if (this.paused) this.game.audioManager?.setEngineSuspended(true);
-    else if (this.started) this.game.audioManager?.startEngine();
+    else if (this.started) this.game.audioManager?.setEngineSuspended(false);
   }
 
   spawnCar() {
