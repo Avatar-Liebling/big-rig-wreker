@@ -80,6 +80,10 @@ export default class GameScene extends Phaser.Scene {
     // Boss chase behavior
     this.bossChaseMode = false;
     this.bossChaseTimer = 0;
+    this.bossRetreating = false;
+    this.bossMaxAttacks = 0;
+    this.bossAttackCount = 0;
+    this.bossQueued = false;
     
     // Analytics reference
     this.analytics = this.game.analytics;
@@ -526,16 +530,17 @@ export default class GameScene extends Phaser.Scene {
   }
 
   updateBoss(dt) {
-    if (!this.boss || !this.boss.active || !this.bossActive) return;
+    const boss = this.boss;
+    if (!boss || !boss.active || !this.bossActive || !boss.scene) return;
     // Safety: if boss was removed from entities, stop processing
-    if (!this.entities.includes(this.boss)) return;
+    if (!this.entities.includes(boss)) return;
     
     // Movement pattern
-    this.boss.attackTimer += dt;
-    if (this.boss.attackCooldown > 0) this.boss.attackCooldown -= dt;
+    boss.attackTimer += dt;
+    if (boss.attackCooldown > 0) boss.attackCooldown -= dt;
     
     // Check if player has passed the boss vertically (player is above boss)
-    const playerPassedBoss = this.player.y < this.boss.y - 30;
+    const playerPassedBoss = this.player.y < boss.y - 30;
     
     // Boss chase mode - if player passes boss, boss chases for a bit
     if (playerPassedBoss && !this.bossChaseMode) {
@@ -548,15 +553,15 @@ export default class GameScene extends Phaser.Scene {
     if (this.bossChaseMode) {
       this.bossChaseTimer -= dt;
       // Chase player vertically and horizontally
-      this.boss.y = Phaser.Math.Linear(this.boss.y, this.player.y - 80, 0.02);
-      this.boss.x = Phaser.Math.Linear(this.boss.x, this.player.x, 0.03);
+      boss.y = Phaser.Math.Linear(boss.y, this.player.y - 80, 0.02);
+      boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.03);
       
       // More aggressive ramming during chase
-      if (this.boss.attackTimer > 1 && this.boss.attackCooldown <= 0) {
-        this.boss.attackTimer = 0;
-        this.boss.attackCooldown = 1.5;
+      if (boss.attackTimer > 1 && boss.attackCooldown <= 0) {
+        boss.attackTimer = 0;
+        boss.attackCooldown = 1.5;
         this.tweens.add({
-          targets: this.boss,
+          targets: boss,
           x: this.player.x,
           duration: 500,
           ease: 'Power2',
@@ -569,54 +574,58 @@ export default class GameScene extends Phaser.Scene {
     } else {
       // Normal behavior when not chasing
       // Phase 1: Slow approach, ram attempts
-      if (this.boss.phase === 1) {
-        this.boss.y += this.boss.vy * dt;
-        if (this.boss.y > 150) this.boss.vy = 20;
+      if (boss.phase === 1) {
+        boss.y += boss.vy * dt;
+        if (boss.y > 150) boss.vy = 20;
         
         // Side-to-side sweeping
-        this.boss.x += this.boss.side * 80 * dt;
-        if (this.boss.x > ROAD_RIGHT - 40 || this.boss.x < ROAD_LEFT + 40) {
-          this.boss.side *= -1;
+        boss.x += boss.side * 80 * dt;
+        if (boss.x > ROAD_RIGHT - 40 || boss.x < ROAD_LEFT + 40) {
+          boss.side *= -1;
         }
         
         // Ram attack - more frequent at higher levels
         const attackInterval = Phaser.Math.Max(1.5, 3 - this.level * 0.2);
-        if (this.boss.attackTimer > attackInterval && this.boss.attackCooldown <= 0) {
-          this.boss.attackTimer = 0;
-          this.boss.attackCooldown = 2;
-          this.boss.attacking = true;
+        if (boss.attackTimer > attackInterval && boss.attackCooldown <= 0) {
+          boss.attackTimer = 0;
+          boss.attackCooldown = 2;
+          boss.attacking = true;
           const targetX = this.player.x;
+          const self = this;
           this.tweens.add({
-            targets: this.boss,
+            targets: boss,
             x: targetX,
             duration: 600,
             ease: 'Power2',
             onComplete: () => { 
-              this.boss.side = targetX < this.boss.x ? -1 : 1; 
-              this.boss.attacking = false;
-              this.bossAttackCount++;
-              this.bossAttackText.setText(`ATTACKS: ${this.bossAttackCount} / ${this.bossMaxAttacks}`);
+              if (!self.boss || !self.boss.active) return;
+              self.boss.side = targetX < self.boss.x ? -1 : 1; 
+              self.boss.attacking = false;
+              self.bossAttackCount++;
+              if (self.bossAttackText) {
+                self.bossAttackText.setText(`ATTACKS: ${self.bossAttackCount} / ${self.bossMaxAttacks}`);
+              }
             }
           });
         }
         
         if (this.bossHealth < this.bossMaxHealth * 0.6) {
-          this.boss.phase = 2;
+          boss.phase = 2;
           this.flashBanner('BOSS ENRAGED!');
           this.game.audioManager?.play('wreck');
         }
       }
       // Phase 2: Faster, spawns minions
-      else if (this.boss.phase === 2) {
-        this.boss.y += this.boss.vy * dt;
-        this.boss.x += this.boss.side * 140 * dt;
-        if (this.boss.x > ROAD_RIGHT - 40 || this.boss.x < ROAD_LEFT + 40) this.boss.side *= -1;
+      else if (boss.phase === 2) {
+        boss.y += boss.vy * dt;
+        boss.x += boss.side * 140 * dt;
+        if (boss.x > ROAD_RIGHT - 40 || boss.x < ROAD_LEFT + 40) boss.side *= -1;
         
-        if (this.boss.attackTimer > 1.5) {
-          this.boss.attackTimer = 0;
+        if (boss.attackTimer > 1.5) {
+          boss.attackTimer = 0;
           // Spawn explosive barrels from sides
           const side = Phaser.Math.Between(0, 1) ? ROAD_LEFT + 30 : ROAD_RIGHT - 30;
-          const barrel = this.physics.add.sprite(side, this.boss.y, 'barrel');
+          const barrel = this.physics.add.sprite(side, boss.y, 'barrel');
           barrel.setDisplaySize(22, 22);
           barrel.setDepth(5);
           barrel.kind = 'hard';
@@ -627,55 +636,72 @@ export default class GameScene extends Phaser.Scene {
         }
         
         if (this.bossHealth < this.bossMaxHealth * 0.2) {
-          this.boss.phase = 3;
+          boss.phase = 3;
           this.flashBanner('FINAL PHASE!');
         }
       }
       // Phase 3: Desperate, charges
       else {
-        this.boss.vy = 120;
-        this.boss.y += this.boss.vy * dt;
+        boss.vy = 120;
+        boss.y += boss.vy * dt;
         // Charge directly at player
-        this.boss.x = Phaser.Math.Linear(this.boss.x, this.player.x, 0.05);
+        boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.05);
       }
     }
+    
+    // Boss may have been destroyed during this frame's logic
+    if (!this.boss || !this.boss.active) return;
     
     // Update health bar
     const ratio = this.bossHealth / this.bossMaxHealth;
-    this.bossBarFill.width = 396 * ratio;
-    this.bossBarFill.fillColor = ratio > 0.5 ? 0xff2200 : (ratio > 0.2 ? 0xffaa00 : 0xff0000);
+    if (this.bossBarFill) {
+      this.bossBarFill.width = 396 * ratio;
+      this.bossBarFill.fillColor = ratio > 0.5 ? 0xff2200 : (ratio > 0.2 ? 0xffaa00 : 0xff0000);
+    }
     
     // Check collision with player - player can damage boss by ramming at high speed
-    // Use AABB collision for accuracy
-    if (this.boss && this.boss.active && this.checkCollision(this.boss)) {
+    if (this.checkCollision(this.boss)) {
       if (this.speed > 350 || this.nitroActive > 0) {
         // Player rams boss at high speed - damage boss
+        const bx = this.boss.x, by = this.boss.y;
         this.damageBoss(25);
-        this.floatText(this.boss.x, this.boss.y - 30, '-25', '#ff4444');
-        this.burst(this.boss.x, this.boss.y, 'spark_particle', 12);
+        this.floatText(bx, by - 30, '-25', '#ff4444');
+        this.burst(bx, by, 'spark_particle', 12);
         this.cameras.main.shake(100, 0.008);
-        // Knockback
-        this.boss.x += (this.boss.x - this.player.x) * 0.3;
+        // Knockback (boss may have been defeated by this hit)
+        if (this.boss && this.boss.active) {
+          this.boss.x += (this.boss.x - this.player.x) * 0.3;
+          this.boss.x += Phaser.Math.Between(-40, 40);
+        }
       } else if (this.shieldTime <= 0) {
         // Boss damages player
         this.damage(25);
+        if (this.boss && this.boss.active) {
+          this.boss.x += Phaser.Math.Between(-40, 40);
+        }
       }
-      this.boss.x += Phaser.Math.Between(-40, 40);
     }
     
-    // Check if boss left screen (but not during chase mode)
-    if (!this.bossChaseMode && this.boss.y > H + 100) {
-      this.cleanupBoss();
-    }
+    // Boss may have been defeated above
+    if (!this.boss || !this.boss.active) return;
     
     // Boss leaves after max attacks
-    if (this.bossAttackCount >= this.bossMaxAttacks && this.boss.y > 100) {
-      this.flashBanner('BOSS RETREATING!');
+    if (this.bossAttackCount >= this.bossMaxAttacks) {
+      if (!this.bossRetreating) {
+        this.bossRetreating = true;
+        this.flashBanner('BOSS RETREATING!');
+        this.game.audioManager?.play('siren');
+      }
       this.boss.vy = 200; // Speed away
       this.boss.y += this.boss.vy * dt;
       if (this.boss.y > H + 100) {
         this.cleanupBoss();
+        return;
       }
+    } else if (!this.bossChaseMode && this.boss.y > H + 100) {
+      // Boss left the screen
+      this.cleanupBoss();
+      return;
     }
   }
   
@@ -684,18 +710,20 @@ export default class GameScene extends Phaser.Scene {
       // Remove from entities array
       const idx = this.entities.indexOf(this.boss);
       if (idx >= 0) this.entities.splice(idx, 1);
-      this.boss.destroy();
+      try { this.boss.destroy(); } catch (_) {}
     }
-    if (this.bossBarBg) this.bossBarBg.destroy();
-    if (this.bossBarFill) this.bossBarFill.destroy();
-    if (this.bossBarLabel) this.bossBarLabel.destroy();
-    if (this.bossAttackText) this.bossAttackText.destroy();
+    if (this.bossBarBg) { try { this.bossBarBg.destroy(); } catch (_) {} }
+    if (this.bossBarFill) { try { this.bossBarFill.destroy(); } catch (_) {} }
+    if (this.bossBarLabel) { try { this.bossBarLabel.destroy(); } catch (_) {} }
+    if (this.bossAttackText) { try { this.bossAttackText.destroy(); } catch (_) {} }
     this.boss = null;
     this.bossActive = false;
     this.bossChaseMode = false;
+    this.bossRetreating = false;
   }
 
   damageBoss(amount) {
+    if (!this.boss || !this.boss.active) return;
     this.bossHealth -= amount;
     this.burst(this.boss.x, this.boss.y, 'spark_particle', 8);
     this.cameras.main.shake(80, 0.006);
@@ -706,6 +734,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   defeatBoss() {
+    if (!this.boss) return;
     const bonus = 5000 * this.combo;
     this.score += bonus;
     this.flashBanner('BOSS DEFEATED! +' + bonus.toLocaleString());
@@ -719,14 +748,15 @@ export default class GameScene extends Phaser.Scene {
     const idx = this.entities.indexOf(this.boss);
     if (idx >= 0) this.entities.splice(idx, 1);
     
-    this.boss.destroy();
-    if (this.bossBarBg) this.bossBarBg.destroy();
-    if (this.bossBarFill) this.bossBarFill.destroy();
-    if (this.bossBarLabel) this.bossBarLabel.destroy();
-    if (this.bossAttackText) this.bossAttackText.destroy();
+    try { this.boss.destroy(); } catch (_) {}
+    if (this.bossBarBg) { try { this.bossBarBg.destroy(); } catch (_) {} }
+    if (this.bossBarFill) { try { this.bossBarFill.destroy(); } catch (_) {} }
+    if (this.bossBarLabel) { try { this.bossBarLabel.destroy(); } catch (_) {} }
+    if (this.bossAttackText) { try { this.bossAttackText.destroy(); } catch (_) {} }
     this.boss = null;
     this.bossActive = false;
     this.bossChaseMode = false;
+    this.bossRetreating = false;
     this.combo = 1;
   }
 
@@ -1080,14 +1110,12 @@ export default class GameScene extends Phaser.Scene {
     }
     
     // Boss spawn every 10 levels
-    if (this.level % 10 === 0 && !this.bossActive && this.score > this.bossSpawnedAt) {
-      if (!this.bossQueued) {
-        this.bossQueued = true;
-        this.time.delayedCall(5000, () => {
-          this.bossQueued = false;
-          this.spawnBoss();
-        });
-      }
+    if (this.level % 10 === 0 && !this.bossActive && !this.bossQueued) {
+      this.bossQueued = true;
+      this.time.delayedCall(5000, () => {
+        this.bossQueued = false;
+        this.spawnBoss();
+      });
     }
     
     // Update boss
@@ -1098,23 +1126,38 @@ export default class GameScene extends Phaser.Scene {
 
   updateEntities(dt) {
     const dy = this.speed * dt;
-    // Use while loop for safer array modification during iteration
-    let i = this.entities.length - 1;
-    while (i >= 0) {
+
+    // --- PASS 1: cleanup invalid entities + move entities ---
+    for (let i = this.entities.length - 1; i >= 0; i--) {
       const e = this.entities[i];
-      // Comprehensive cleanup check - catches wrecked, destroyed, collected, inactive, scene-less
-      if (!e || !e.active || e.wrecked || e.collected || !e.scene || e.destroyed) {
-        if (e && e.scene && !e.destroyed) {
-          try { e.destroy(); } catch (_) {}
-        }
+
+      // Remove invalid or destroyed entities
+      if (!e || !e.active || !e.scene || e.destroyed) {
         this.entities.splice(i, 1);
-        i--;
         continue;
       }
-      if (e.kind === 'police' && !e.wrecked) {
+      // Collected power-ups are removed immediately
+      if (e.collected) {
+        try { e.destroy(); } catch (_) {}
+        this.entities.splice(i, 1);
+        continue;
+      }
+
+      // Wrecked entities just scroll away while their wreck tween plays
+      if (e.wrecked) {
+        e.y += dy;
+        if (e.y > H + 80) {
+          try { e.destroy(); } catch (_) {}
+          this.entities.splice(i, 1);
+        }
+        continue;
+      }
+
+      // AI behavior
+      if (e.kind === 'police') {
         e.x = Phaser.Math.Linear(e.x, this.player.x, 0.02 + this.level * 0.002);
       }
-      if (e.kind === 'car' && e.agile && !e.wrecked) {
+      if (e.kind === 'car' && e.agile) {
         // Motorcycle lane weaving
         e.laneChangeTimer -= dt;
         if (e.laneChangeTimer <= 0) {
@@ -1123,75 +1166,72 @@ export default class GameScene extends Phaser.Scene {
         }
         e.x = Phaser.Math.Linear(e.x, e.targetLane, 0.05);
       }
-      
-      // AI vehicle separation - prevent overlapping for ALL vehicles
-      if (!e.wrecked && (e.kind === 'car' || e.kind === 'police' || e.kind === 'boss' || e.kind === 'hard' || e.kind === 'container' || e.kind === 'debris')) {
-        // Use index loop to avoid issues with array modification during iteration
-        for (let j = 0; j < this.entities.length; j++) {
-          const other = this.entities[j];
-          if (other !== e && other && other.active && !other.wrecked && !other.collected && other.scene && !other.destroyed &&
-              (other.kind === 'car' || other.kind === 'police' || other.kind === 'boss' || other.kind === 'hard' || other.kind === 'container' || other.kind === 'debris')) {
-            const dist = Phaser.Math.Distance.Between(e.x, e.y, other.x, other.y);
-            const minDist = 60; // minimum separation distance (increased)
-            if (dist < minDist && dist > 0) {
-              // Push away from each other - both X and Y
-              const pushX = (e.x - other.x) / dist * (minDist - dist) * 0.4;
-              const pushY = (e.y - other.y) / dist * (minDist - dist) * 0.3;
-              e.x += pushX * dt * 60;
-              e.y += pushY * dt * 60;
-              other.x -= pushX * dt * 60;
-              other.y -= pushY * dt * 60;
-              // Clamp to road bounds
-              e.x = Phaser.Math.Clamp(e.x, ROAD_LEFT + 30, ROAD_RIGHT - 30);
-              other.x = Phaser.Math.Clamp(other.x, ROAD_LEFT + 30, ROAD_RIGHT - 30);
-              // Keep Y within reasonable bounds
-              e.y = Phaser.Math.Clamp(e.y, -100, H + 100);
-              other.y = Phaser.Math.Clamp(other.y, -100, H + 100);
-            }
-          }
-        }
-      }
-      
+
+      // Scroll down the road
       e.y += dy - (e.vy || 0) * dt;
       if (e.kind === 'power') e.y += Math.sin(this.time.now / 200 + e.x) * 0.2;
 
-      // AABB collision detection - full vehicle/trailer bounds
-      if (!e.wrecked && this.checkCollision(e)) {
-        try {
-          if (e.kind === 'boss') {
-            if (this.speed > 350 || this.nitroActive > 0) {
-              this.damageBoss(25);
-              this.floatText(e.x, e.y - 30, '-25', '#ff4444');
-              this.burst(e.x, e.y, 'spark_particle', 12);
-              this.cameras.main.shake(100, 0.008);
-            } else if (this.shieldTime <= 0) {
-              this.damage(25);
-            }
-            this.boss.x += Phaser.Math.Between(-40, 40);
-          } else {
-            this.resolveHit(e);
-            // Skip further processing for this entity this frame (oil, soft, etc. destroy themselves)
-            if (e.wrecked || !e.active || !e.scene || e.destroyed) {
-              if (e.scene && !e.destroyed) {
-                try { e.destroy(); } catch (_) {}
-              }
-              this.entities.splice(i, 1);
-              continue;
-            }
-          }
-        } catch (err) {
-          console.error('Collision error:', err);
-          // Force cleanup on error
-          if (e && e.scene && !e.destroyed) {
-            try { e.destroy(); } catch (_) {}
-          }
-          this.entities.splice(i, 1);
-          continue;
+      // Off-screen cleanup
+      if (e.y > H + 80) {
+        try { e.destroy(); } catch (_) {}
+        this.entities.splice(i, 1);
+      }
+    }
+
+    // --- PASS 2: AI vehicle separation (snapshot so array changes don't break it) ---
+    const traffic = this.entities.filter(e =>
+      e && e.active && !e.wrecked && !e.collected && e.scene && !e.destroyed &&
+      (e.kind === 'car' || e.kind === 'police' || e.kind === 'boss' ||
+       e.kind === 'hard' || e.kind === 'container' || e.kind === 'debris')
+    );
+
+    for (let i = 0; i < traffic.length; i++) {
+      const e = traffic[i];
+      for (let j = i + 1; j < traffic.length; j++) {
+        const other = traffic[j];
+        if (!e.active || !other.active) continue;
+
+        const dist = Phaser.Math.Distance.Between(e.x, e.y, other.x, other.y);
+        const minDist = 60;
+        if (dist < minDist && dist > 0) {
+          // Push away from each other - both X and Y
+          const pushX = (e.x - other.x) / dist * (minDist - dist) * 0.4;
+          const pushY = (e.y - other.y) / dist * (minDist - dist) * 0.3;
+          e.x += pushX * dt * 60;
+          e.y += pushY * dt * 60;
+          other.x -= pushX * dt * 60;
+          other.y -= pushY * dt * 60;
+          // Clamp to road bounds
+          e.x = Phaser.Math.Clamp(e.x, ROAD_LEFT + 30, ROAD_RIGHT - 30);
+          other.x = Phaser.Math.Clamp(other.x, ROAD_LEFT + 30, ROAD_RIGHT - 30);
+          // Keep Y within reasonable bounds
+          e.y = Phaser.Math.Clamp(e.y, -100, H + 100);
+          other.y = Phaser.Math.Clamp(other.y, -100, H + 100);
         }
       }
-      if (e.y > H + 80) {
-        e.destroy();
-        this.entities.splice(i, 1);
+    }
+
+    // --- PASS 3: collision detection with player ---
+    for (let i = this.entities.length - 1; i >= 0; i--) {
+      const e = this.entities[i];
+      if (!e || !e.active || e.wrecked || e.collected || !e.scene || e.destroyed) continue;
+      // Boss collisions are handled in updateBoss() to avoid double damage
+      if (e.kind === 'boss') continue;
+      if (!this.checkCollision(e)) continue;
+
+      try {
+        this.resolveHit(e);
+      } catch (err) {
+        console.error('Collision error:', err);
+      }
+
+      // Entity may have destroyed itself during resolveHit
+      if (!e.active || e.wrecked || e.collected || !e.scene || e.destroyed) {
+        if (e.scene && !e.destroyed) {
+          try { e.destroy(); } catch (_) {}
+        }
+        const idx = this.entities.indexOf(e);
+        if (idx >= 0) this.entities.splice(idx, 1);
       }
     }
   }
@@ -1219,15 +1259,6 @@ export default class GameScene extends Phaser.Scene {
     const pTop = this.player.y - pH / 2;
     const pBottom = this.player.y + pH / 2;
 
-    // Trailer bounds (centered on trailer) - check trailer exists
-    if (!this.trailer || !this.trailer.active || !this.trailerBounds) return false;
-    const tW = this.trailerBounds.width;
-    const tH = this.trailerBounds.height;
-    const tLeft = this.trailer.x - tW / 2;
-    const tRight = this.trailer.x + tW / 2;
-    const tTop = this.trailer.y - tH / 2;
-    const tBottom = this.trailer.y + tH / 2;
-
     // Entity bounds - use display size for accuracy (with fallbacks)
     const eW = (entity.displayWidth || 30) * 0.8;
     const eH = (entity.displayHeight || 30) * 0.8;
@@ -1238,9 +1269,20 @@ export default class GameScene extends Phaser.Scene {
 
     // Check player collision
     const playerHit = !(pRight < eLeft || pLeft > eRight || pBottom < eTop || pTop > eBottom);
-    
-    // Check trailer collision
-    const trailerHit = !(tRight < eLeft || tLeft > eRight || tBottom < eTop || tTop > eBottom);
+
+    // Trailer bounds (centered on trailer) - optional, player collision still works without trailer
+    let trailerHit = false;
+    if (this.trailer && this.trailer.active && this.trailerBounds) {
+      const tW = this.trailerBounds.width;
+      const tH = this.trailerBounds.height;
+      const tLeft = this.trailer.x - tW / 2;
+      const tRight = this.trailer.x + tW / 2;
+      const tTop = this.trailer.y - tH / 2;
+      const tBottom = this.trailer.y + tH / 2;
+
+      // Check trailer collision
+      trailerHit = !(tRight < eLeft || tLeft > eRight || tBottom < eTop || tTop > eBottom);
+    }
 
     return playerHit || trailerHit;
   }
@@ -1328,7 +1370,11 @@ export default class GameScene extends Phaser.Scene {
         this.cameras.main.shake(120, 0.004);
         e.wrecked = true;
         e.setVelocity(Phaser.Math.Between(-80, 80), 40);
-        this.time.delayedCall(400, () => e.destroy());
+        this.time.delayedCall(400, () => {
+          if (e && e.scene && !e.destroyed) {
+            try { e.destroy(); } catch (_) {}
+          }
+        });
         return;
       }
       // Fast enough to smash through hard obstacles
@@ -1376,13 +1422,14 @@ export default class GameScene extends Phaser.Scene {
   collect(e) {
     if (!e || e.collected) return;
     e.collected = true;
+    // Capture values BEFORE destroying (destroy() clears properties)
+    const power = e.power;
+    const x = e.x || (this.player ? this.player.x : W / 2);
+    const y = e.y || (this.player ? this.player.y : H / 2);
     // Destroy the powerup entity immediately to prevent freeze
     if (e.scene && !e.destroyed) {
       try { e.destroy(); } catch (_) {}
     }
-    const power = e.power;
-    const x = e.x || (this.player ? this.player.x : W / 2);
-    const y = e.y || (this.player ? this.player.y : H / 2);
 
     const applyPower = (pType) => {
       const map = {
@@ -1492,8 +1539,13 @@ export default class GameScene extends Phaser.Scene {
     this.speedText.setText(mph + ' MPH');
     const speedRatio = Phaser.Math.Clamp((this.speed - this.minSpeed) / (this.maxSpeed - this.minSpeed), 0, 1);
     this.speedFill.width = 160 * speedRatio;
-    const speedMask = this.add.graphics().fillRect(W - 176, 23, 160 * speedRatio, 6);
-    this.speedFill.setMask(speedMask.createGeometryMask());
+    // Update the existing mask graphics instead of creating a new one every frame (memory leak)
+    if (!this.speedMask) {
+      this.speedMask = this.make.graphics({ x: 0, y: 0 }, false);
+      this.speedFill.setMask(this.speedMask.createGeometryMask());
+    }
+    this.speedMask.clear();
+    this.speedMask.fillRect(W - 176, 23, 160 * speedRatio, 6);
     
     const hp = Math.max(0, this.health) / 100;
     this.hpFill.width = (this.hpBarW || 120) * hp;
