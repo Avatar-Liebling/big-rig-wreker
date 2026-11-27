@@ -84,6 +84,7 @@ export default class GameScene extends Phaser.Scene {
     this.bossMaxAttacks = 0;
     this.bossAttackCount = 0;
     this.bossQueued = false;
+    this.bossRamCooldown = 0;
     
     // Analytics reference
     this.analytics = this.game.analytics;
@@ -538,6 +539,7 @@ export default class GameScene extends Phaser.Scene {
     // Movement pattern
     boss.attackTimer += dt;
     if (boss.attackCooldown > 0) boss.attackCooldown -= dt;
+    if (this.bossRamCooldown > 0) this.bossRamCooldown -= dt;
     
     // Check if player has passed the boss vertically (player is above boss)
     const playerPassedBoss = this.player.y < boss.y - 30;
@@ -585,7 +587,7 @@ export default class GameScene extends Phaser.Scene {
         }
         
         // Ram attack - more frequent at higher levels
-        const attackInterval = Phaser.Math.Max(1.5, 3 - this.level * 0.2);
+        const attackInterval = Math.max(1.5, 3 - this.level * 0.2);
         if (boss.attackTimer > attackInterval && boss.attackCooldown <= 0) {
           boss.attackTimer = 0;
           boss.attackCooldown = 2;
@@ -660,24 +662,29 @@ export default class GameScene extends Phaser.Scene {
     }
     
     // Check collision with player - player can damage boss by ramming at high speed
+    // A cooldown prevents contact damage from ticking every single frame.
     if (this.checkCollision(this.boss)) {
-      if (this.speed > 350 || this.nitroActive > 0) {
-        // Player rams boss at high speed - damage boss
-        const bx = this.boss.x, by = this.boss.y;
-        this.damageBoss(25);
-        this.floatText(bx, by - 30, '-25', '#ff4444');
-        this.burst(bx, by, 'spark_particle', 12);
-        this.cameras.main.shake(100, 0.008);
-        // Knockback (boss may have been defeated by this hit)
-        if (this.boss && this.boss.active) {
-          this.boss.x += (this.boss.x - this.player.x) * 0.3;
-          this.boss.x += Phaser.Math.Between(-40, 40);
-        }
-      } else if (this.shieldTime <= 0) {
-        // Boss damages player
-        this.damage(25);
-        if (this.boss && this.boss.active) {
-          this.boss.x += Phaser.Math.Between(-40, 40);
+      const canRam = this.bossRamCooldown <= 0;
+      if (canRam) {
+        this.bossRamCooldown = 0.8; // 0.8s between contact hits
+        if (this.speed > 350 || this.nitroActive > 0) {
+          // Player rams boss at high speed - damage boss
+          const bx = this.boss.x, by = this.boss.y;
+          this.damageBoss(25);
+          this.floatText(bx, by - 30, '-25', '#ff4444');
+          this.burst(bx, by, 'spark_particle', 12);
+          this.cameras.main.shake(100, 0.008);
+          // Knockback (boss may have been defeated by this hit)
+          if (this.boss && this.boss.active) {
+            this.boss.x += (this.boss.x - this.player.x) * 0.3;
+            this.boss.x += Phaser.Math.Between(-40, 40);
+          }
+        } else if (this.shieldTime <= 0) {
+          // Boss damages player
+          this.damage(25);
+          if (this.boss && this.boss.active) {
+            this.boss.x += Phaser.Math.Between(-40, 40);
+          }
         }
       }
     }
@@ -887,13 +894,26 @@ export default class GameScene extends Phaser.Scene {
     if (!this.started || this.paused) return;
     const dt = Math.min(delta, 40) / 1000;
 
-    this.handleInput(dt);
-    this.updatePlayer(dt);
-    this.scrollWorld(dt);
-    this.updateSpawns(dt);
-    this.updateEntities(dt);
-    this.updateHud();
-    this.updateWeather(dt);
+    // Wrap each subsystem so a single error can never freeze the whole game loop.
+    // A thrown error inside Phaser's update() would otherwise stop the scene permanently.
+    const safe = (name, fn) => {
+      try {
+        fn();
+      } catch (err) {
+        if (!this._errorLogged) {
+          this._errorLogged = true;
+          console.error(`GameScene error in ${name}:`, err);
+        }
+      }
+    };
+
+    safe('handleInput', () => this.handleInput(dt));
+    safe('updatePlayer', () => this.updatePlayer(dt));
+    safe('scrollWorld', () => this.scrollWorld(dt));
+    safe('updateSpawns', () => this.updateSpawns(dt));
+    safe('updateEntities', () => this.updateEntities(dt));
+    safe('updateHud', () => this.updateHud());
+    safe('updateWeather', () => this.updateWeather(dt));
   }
 
   handleInput(dt) {
@@ -1000,6 +1020,9 @@ export default class GameScene extends Phaser.Scene {
   
   upgradeVehicle() {
     const checkpoint = this.nextCheckpoint;
+    if (!checkpoint) return;
+    // Scene may have been torn down (game over) - bail out safely
+    if (!this.player || !this.player.scene || !this.trailer || !this.trailer.scene) return;
     this.currentVehicleTier++;
     
     // Update player sprite and size
@@ -1060,8 +1083,8 @@ export default class GameScene extends Phaser.Scene {
     this.vehicleUpgradePending = false;
     
     // Analytics
-    if (this.analytics) {
-      this.analytics.trackEvent('vehicle_upgrade', {
+    if (this.analytics && typeof this.analytics.track === 'function') {
+      this.analytics.track('vehicle_upgrade', {
         tier: this.currentVehicleTier,
         vehicle: checkpoint.vehicle,
         distance: Math.floor(this.distance)
@@ -1528,9 +1551,12 @@ export default class GameScene extends Phaser.Scene {
   }
 
   flashBanner(msg) {
+    if (!this.banner || !this.banner.scene) return;
     this.banner.setText(msg);
     this.banner.setAlpha(1);
-    this.time.delayedCall(900, () => this.banner.setText(''));
+    this.time.delayedCall(900, () => {
+      if (this.banner && this.banner.scene) this.banner.setText('');
+    });
   }
 
   updateHud() {
