@@ -658,6 +658,8 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
     
+    console.log('[updateBoss] Called, attackCount:', this.bossAttackCount, 'attackTimer:', boss.attackTimer?.toFixed(2));
+    
     // Movement pattern - wrapped in try/catch to see silent errors
     try {
       boss.attackTimer += dt;
@@ -668,56 +670,57 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
     
-    // Check if player has passed the boss vertically (player is above boss)
-    const playerPassedBoss = this.player.y < boss.y - 30;
-    
-    // Boss chase mode - if player passes boss, boss chases for a bit
-    if (playerPassedBoss && !this.bossChaseMode) {
-      this.bossChaseMode = true;
-      this.bossChaseTimer = 8; // Chase for 8 seconds
-      this.flashBanner('BOSS PURSUING!');
-      this.game.audioManager?.play('siren');
-    }
-    
-    if (this.bossChaseMode) {
-      this.bossChaseTimer -= dt;
-      // Chase player vertically and horizontally - LESS AGGRESSIVE
-      // Skip linear interpolation during ram attack
-      if (!boss.attacking) {
-        boss.y = Phaser.Math.Linear(boss.y, this.player.y - 80, 0.03); // Stay further behind player, slower
-        boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.05); // Slower horizontal tracking
+    try {
+      // Check if player has passed the boss vertically (player is above boss)
+      const playerPassedBoss = this.player.y < boss.y - 30;
+      
+      // Boss chase mode - if player passes boss, boss chases for a bit
+      if (playerPassedBoss && !this.bossChaseMode) {
+        this.bossChaseMode = true;
+        this.bossChaseTimer = 8; // Chase for 8 seconds
+        this.flashBanner('BOSS PURSUING!');
+        this.game.audioManager?.play('siren');
       }
       
-      // Less aggressive ramming during chase
-      if (boss.attackTimer > 1.5 && boss.attackCooldown <= 0) {
-        boss.attackTimer = 0;
-        boss.attackCooldown = 2.0;
-        boss.vy = 0; // Stop velocity during ram
-        // Ram vertically downward at player (stop 80px above player)
-        const self = this;
-        this.tweens.add({
-          targets: boss,
-          y: this.player.y - 80, // Stop 80px above player
-          duration: 500,
-          ease: 'Power2',
-          onComplete: () => { 
-            if (!self.boss || !self.boss.active) return;
-            self.boss.attacking = false;
-            self.bossAttackCount++;
-            if (self.bossAttackText) {
-              self.bossAttackText.setText(`ATTACKS: ${self.bossAttackCount} / ${self.bossMaxAttacks}`);
+      if (this.bossChaseMode) {
+        this.bossChaseTimer -= dt;
+        // Chase player vertically and horizontally - LESS AGGRESSIVE
+        // Skip linear interpolation during ram attack
+        if (!boss.attacking) {
+          boss.y = Phaser.Math.Linear(boss.y, this.player.y - 80, 0.03); // Stay further behind player, slower
+          boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.05); // Slower horizontal tracking
+        }
+        
+        // Less aggressive ramming during chase
+        if (boss.attackTimer > 1.5 && boss.attackCooldown <= 0) {
+          boss.attackTimer = 0;
+          boss.attackCooldown = 2.0;
+          boss.vy = 0; // Stop velocity during ram
+          // Ram vertically downward at player (stop 80px above player)
+          const self = this;
+          this.tweens.add({
+            targets: boss,
+            y: this.player.y - 80, // Stop 80px above player
+            duration: 500,
+            ease: 'Power2',
+            onComplete: () => { 
+              if (!self.boss || !self.boss.active) return;
+              self.boss.attacking = false;
+              self.bossAttackCount++;
+              if (self.bossAttackText) {
+                self.bossAttackText.setText(`ATTACKS: ${self.bossAttackCount} / ${self.bossMaxAttacks}`);
+              }
             }
-          }
-        });
-        // Visual indicator of ram
-        this.emitRadial(boss.x, boss.y, 'spark_shower', 6, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' });
-        this.cameras.main.shake(60, 0.005);
-      }
-      
-      if (this.bossChaseTimer <= 0) {
-        this.bossChaseMode = false;
-      }
-    } else {
+          });
+          // Visual indicator of ram
+          this.emitRadial(boss.x, boss.y, 'spark_shower', 6, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' });
+          this.cameras.main.shake(60, 0.005);
+        }
+        
+        if (this.bossChaseTimer <= 0) {
+          this.bossChaseMode = false;
+        }
+      } else {
       // Normal behavior when not chasing
       // Phase 1: Slow approach, ram attempts - FIRST ENCOUNTER (level 10) IS MUCH EASIER
       if (boss.phase === 1) {
@@ -941,7 +944,11 @@ export default class GameScene extends Phaser.Scene {
       this.cleanupBoss();
       return;
     }
+  } catch (e) {
+    console.log('[updateBoss] Retreat/collision error:', e.message, e.stack);
+    return;
   }
+}
   
   cleanupBoss() {
     if (this.boss) {
