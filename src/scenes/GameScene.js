@@ -589,6 +589,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   spawnBoss() {
+    console.error('[spawnBoss] Called, this.bossActive=', this.bossActive, 'stack:', new Error().stack);
     if (this.bossActive) return;
     this.bossActive = true;
     this.bossMaxHealth = 300 + this.level * 100;
@@ -604,6 +605,7 @@ export default class GameScene extends Phaser.Scene {
     this.boss.setDisplaySize(140, 70);
     this.boss.setAngle(-90);
     this.boss.setDepth(8);
+    this.boss.instanceId = Date.now() + Math.random(); // Unique instance ID
     // Physics body for collision - narrower than display size for fair collision
     this.boss.body.setSize(80, 40);
     this.boss.body.setOffset(30, 15);
@@ -662,7 +664,7 @@ export default class GameScene extends Phaser.Scene {
     
     // Movement pattern - wrapped in try/catch to see silent errors
     try {
-      console.error('[updateBoss] TIMER UPDATE START dt=', dt, 'attackTimer=', boss.attackTimer, 'boss.id=', boss.id, 'this.boss.id=', this.boss?.id);
+      console.error('[updateBoss] TIMER UPDATE START dt=', dt, 'attackTimer=', boss.attackTimer, 'boss.instanceId=', boss.instanceId, 'this.boss.instanceId=', this.boss?.instanceId);
       const beforeAttackTimer = boss.attackTimer;
       const beforeAttackCooldown = boss.attackCooldown;
       boss.attackTimer += dt;
@@ -968,6 +970,7 @@ export default class GameScene extends Phaser.Scene {
 }
   
   cleanupBoss() {
+    console.error('[cleanupBoss] Called, this.boss.instanceId=', this.boss?.instanceId, 'stack:', new Error().stack);
     if (this.boss) {
       // Remove from entities array
       const idx = this.entities.indexOf(this.boss);
@@ -996,6 +999,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   defeatBoss() {
+    console.error('[defeatBoss] Called, this.boss.instanceId=', this.boss?.instanceId, 'stack:', new Error().stack);
     if (!this.boss) return;
     const bonus = 5000 * this.combo;
     this.score += bonus;

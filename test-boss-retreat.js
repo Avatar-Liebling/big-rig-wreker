@@ -5,7 +5,13 @@ import { chromium } from 'playwright';
   const page = await browser.newPage({ viewport: { width: 900, height: 560 } });
 
   const errors = [];
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('console', (m) => { 
+    const text = m.text();
+    errors.push(`[${m.type()}] ${text}`);
+    if (text.includes('updateBoss') || text.includes('Timer error') || text.includes('Phase logic') || text.includes('Retreat/collision')) {
+      console.log(`[CONSOLE ${m.type()}] ${text}`);
+    }
+  });
   page.on('pageerror', (e) => errors.push(e.message));
 
   await page.goto('https://big-rig-wrecker.onrender.com/', { waitUntil: 'networkidle', timeout: 60000 });
@@ -52,6 +58,7 @@ import { chromium } from 'playwright';
         bossChaseMode: gs.bossChaseMode,
         bossChaseTimer: gs.bossChaseTimer,
         playerY: gs.player.y,
+        bossId: gs.boss?.instanceId,
         errors: gs._errors ? gs._errors.slice(-5) : []
       };
     });
