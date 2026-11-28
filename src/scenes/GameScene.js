@@ -667,13 +667,16 @@ export default class GameScene extends Phaser.Scene {
       console.error('[updateBoss] TIMER UPDATE START dt=', dt, 'attackTimer=', boss.attackTimer, 'boss.instanceId=', boss.instanceId, 'this.boss.instanceId=', this.boss?.instanceId);
       const beforeAttackTimer = boss.attackTimer;
       const beforeAttackCooldown = boss.attackCooldown;
-      boss.attackTimer += dt;
+      // Only increment attackTimer when NOT attacking (tween controls the attack)
+      if (!boss.attacking) {
+        boss.attackTimer += dt;
+      }
       if (boss.attackCooldown > 0) boss.attackCooldown -= dt;
       if (this.bossRamCooldown > 0) this.bossRamCooldown -= dt;
       const afterAttackTimer = boss.attackTimer;
       const afterAttackCooldown = boss.attackCooldown;
       console.error('[updateBoss] TIMER UPDATE END beforeAttackTimer=', beforeAttackTimer, 'afterAttackTimer=', afterAttackTimer, 'dt=', dt, 'beforeCooldown=', beforeAttackCooldown, 'afterCooldown=', afterAttackCooldown);
-      if (beforeAttackTimer === afterAttackTimer && dt > 0) {
+      if (beforeAttackTimer === afterAttackTimer && dt > 0 && !boss.attacking) {
         console.error('[updateBoss] *** TIMER NOT INCREMENTING! boss===this.boss:', boss === this.boss, 'boss.attackTimer writable:', Object.getOwnPropertyDescriptor(boss, 'attackTimer')?.writable);
       }
     } catch (e) {
@@ -717,6 +720,7 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Power2',
             onComplete: () => { 
               if (!self.boss || !self.boss.active) return;
+              console.error('[updateBoss] ATTACK COMPLETE chase boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
               self.boss.attacking = false;
               self.bossAttackCount++;
               if (self.bossAttackText) {
@@ -779,6 +783,7 @@ export default class GameScene extends Phaser.Scene {
             ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
             onComplete: () => { 
               if (!self.boss || !self.boss.active) return;
+              console.error('[updateBoss] ATTACK COMPLETE phase=1 boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
               self.boss.side = self.player.x < self.boss.x ? -1 : 1; 
               self.boss.attacking = false;
               self.bossAttackCount++;
@@ -845,6 +850,7 @@ export default class GameScene extends Phaser.Scene {
               ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
               onComplete: () => {
                 if (!self.boss || !self.boss.active) return;
+                console.error('[updateBoss] ATTACK COMPLETE phase=2 boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
                 self.boss.attacking = false;
                 self.bossAttackCount++;
               }
@@ -884,6 +890,7 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Power3',
             onComplete: () => {
               if (!self.boss || !self.boss.active) return;
+              console.error('[updateBoss] ATTACK COMPLETE phase=3 boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
               self.boss.attacking = false;
               self.bossAttackCount++;
             }
