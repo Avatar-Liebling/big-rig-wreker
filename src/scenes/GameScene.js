@@ -722,6 +722,7 @@ export default class GameScene extends Phaser.Scene {
               if (!self.boss || !self.boss.active) return;
               console.error('[updateBoss] ATTACK COMPLETE chase boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
               self.boss.attacking = false;
+              self.boss.attackTimer = 0; // Reset timer after attack
               self.bossAttackCount++;
               if (self.bossAttackText) {
                 self.bossAttackText.setText(`ATTACKS: ${self.bossAttackCount} / ${self.bossMaxAttacks}`);
@@ -786,6 +787,7 @@ export default class GameScene extends Phaser.Scene {
               console.error('[updateBoss] ATTACK COMPLETE phase=1 boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
               self.boss.side = self.player.x < self.boss.x ? -1 : 1; 
               self.boss.attacking = false;
+              self.boss.attackTimer = 0; // Reset timer after attack
               self.bossAttackCount++;
               if (self.bossAttackText) {
                 self.bossAttackText.setText(`ATTACKS: ${self.bossAttackCount} / ${self.bossMaxAttacks}`);
@@ -852,6 +854,7 @@ export default class GameScene extends Phaser.Scene {
                 if (!self.boss || !self.boss.active) return;
                 console.error('[updateBoss] ATTACK COMPLETE phase=2 boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
                 self.boss.attacking = false;
+                self.boss.attackTimer = 0; // Reset timer after attack
                 self.bossAttackCount++;
               }
             });
@@ -892,6 +895,7 @@ export default class GameScene extends Phaser.Scene {
               if (!self.boss || !self.boss.active) return;
               console.error('[updateBoss] ATTACK COMPLETE phase=3 boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
               self.boss.attacking = false;
+              self.boss.attackTimer = 0; // Reset timer after attack
               self.bossAttackCount++;
             }
           });
