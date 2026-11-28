@@ -174,9 +174,12 @@ export default class GameScene extends Phaser.Scene {
     this.player.setDisplaySize(92, 46);
     this.player.setAngle(-90);
     this.player.setDepth(10);
-    // Physics body for collision - wider at front (cab) since truck faces up (-90 deg)
-    this.player.body.setSize(56, 40);
-    this.player.body.setOffset(17, 3);
+    // Physics body for collision - cover full truck length, cab at front (top at -90 deg)
+    // Visual: 92 tall x 46 wide at -90 deg. Body should cover cab area at top.
+    // Visual top = player.y - 46 = 294, Visual bottom = player.y + 46 = 386
+    // Body height 75, offset -22 puts top at ~293 (cab) and bottom at ~368
+    this.player.body.setSize(46, 75);  // width=visual width, height=covers cab + engine
+    this.player.body.setOffset(0, -22);  // shift body up to cover cab (front)
     this.player.setCollideWorldBounds(true);
 
     this.trailer = this.add.image(this.player.x, this.player.y + 62, 'trailer');
@@ -185,8 +188,8 @@ export default class GameScene extends Phaser.Scene {
     this.trailer.setDepth(9);
     
     // Collision bounds for player + trailer (used for precise collision)
-    // Player bounds: wider at front (cab) to cover the front collision area properly
-    this.playerBounds = { width: 56, height: 40 };
+    // Player bounds: match physics body for accurate collision
+    this.playerBounds = { width: 46, height: 75 };
     this.trailerBounds = { width: 62, height: 32 };
 
     // Enhanced exhaust with multiple layers - MORE VISIBLE
@@ -1286,15 +1289,26 @@ export default class GameScene extends Phaser.Scene {
     if (!this.player || !this.player.scene || !this.trailer || !this.trailer.scene) return;
     this.currentVehicleTier++;
     
+    // Vehicle-specific physics body configs (width, height, offsetX, offsetY)
+    // All vehicles face up (-90 deg), so cab is at top (smaller Y)
+    const bodyConfigs = {
+      'truck': { width: 46, height: 75, offsetX: 0, offsetY: -22 },
+      'big_rig': { width: 55, height: 85, offsetX: 0, offsetY: -25 },
+      'road_train': { width: 65, height: 100, offsetX: 0, offsetY: -28 },
+      'juggernaut': { width: 75, height: 115, offsetX: 0, offsetY: -30 },
+    };
+    const bodyCfg = bodyConfigs[checkpoint.vehicle] || bodyConfigs['truck'];
+    
     // Update player sprite and size
     this.player.setTexture(checkpoint.vehicle);
     this.player.setDisplaySize(...checkpoint.size);
-    this.player.body.setSize(checkpoint.size[0] * 0.76, checkpoint.size[1] * 0.74);
+    this.player.body.setSize(bodyCfg.width, bodyCfg.height);
+    this.player.body.setOffset(bodyCfg.offsetX, bodyCfg.offsetY);
     
     // Update collision bounds for player + trailer
     this.playerBounds = { 
-      width: checkpoint.size[0] * 0.76, 
-      height: checkpoint.size[1] * 0.74 
+      width: bodyCfg.width, 
+      height: bodyCfg.height 
     };
     
     // Update trailer
@@ -1319,8 +1333,9 @@ export default class GameScene extends Phaser.Scene {
     this.exhaust2.setPosition(this.trailer.x, this.trailer.y + th * 0.45);
     this.flames.setPosition(this.trailer.x, this.trailer.y + th * 0.3);
     
-    // Update headlights position
-    this.headlights.setPosition(this.player.x, this.player.y - checkpoint.size[1] * 0.8);
+    // Update headlights position - at cab front (top of sprite at -90 deg)
+    const headlightYOffset = this.player.body.offset.y + this.player.body.height / 2;
+    this.headlights.setPosition(this.player.x, this.player.y + headlightYOffset);
     
     // Flash upgrade banner
     this.flashBanner(checkpoint.label + ' UNLOCKED!');
