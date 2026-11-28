@@ -783,6 +783,9 @@ export default class GameScene extends Phaser.Scene {
             y: targetY,
             duration: isFirstBoss ? 1500 : 600, // Much slower ram
             ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
+            onStart: () => {
+              console.error('[updateBoss] TWEEN START phase=1 targetY=', targetY, 'boss.y=', boss.y, 'duration=', isFirstBoss ? 1500 : 600);
+            },
             onComplete: () => { 
               if (!self.boss || !self.boss.active) return;
               console.error('[updateBoss] ATTACK COMPLETE phase=1 boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
