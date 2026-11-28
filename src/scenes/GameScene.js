@@ -750,7 +750,7 @@ export default class GameScene extends Phaser.Scene {
           // Don't ram all the way to player - stop well short
           // For first boss, clamp is at Y=220, so target must be < 220 (higher on screen, smaller Y)
           const stopY = isFirstBoss ? 220 : 120;
-          const targetY = isFirstBoss ? Math.min(this.player.y - 140, stopY - 20) : this.player.y - 100;
+          const targetY = isFirstBoss ? Math.min(this.player.y - 140, stopY - 40) : this.player.y - 100;
           const self = this;
           this.tweens.add({
             targets: boss,
@@ -817,7 +817,7 @@ export default class GameScene extends Phaser.Scene {
             const self = this;
             // Phase 2 clamp for first boss is at Y=200, so target must be < 200 (higher on screen, smaller Y)
             const stopY = isFirstBoss ? 200 : 120;
-            const targetY = isFirstBoss ? Math.min(this.player.y - 120, stopY - 20) : this.player.y - 80;
+            const targetY = isFirstBoss ? Math.min(this.player.y - 120, stopY - 40) : this.player.y - 80;
             this.tweens.add({
               targets: boss,
               y: targetY,
