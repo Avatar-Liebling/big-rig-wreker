@@ -589,7 +589,6 @@ export default class GameScene extends Phaser.Scene {
   }
 
   spawnBoss() {
-    console.error('[spawnBoss] Called, this.bossActive=', this.bossActive, 'stack:', new Error().stack);
     if (this.bossActive) return;
     this.bossActive = true;
     this.bossMaxHealth = 300 + this.level * 100;
@@ -639,14 +638,9 @@ export default class GameScene extends Phaser.Scene {
 
   updateBoss(dt) {
     const boss = this.boss;
-    console.error('[updateBoss] ENTRY boss=', !!boss, 'active=', boss?.active, 'bossActive=', this.bossActive, 'scene=', boss?.scene, 'entities.includes=', this.entities.includes(boss), 'attacking=', boss?.attacking, 'attackTimer=', boss?.attackTimer, 'attackCooldown=', boss?.attackCooldown, 'phase=', boss?.phase, 'vy=', boss?.vy, 'y=', boss?.y);
     if (!boss || !boss.active || !this.bossActive || !boss.scene) return;
     // Safety: if boss was removed from entities, stop processing
     if (!this.entities.includes(boss)) return;
-    
-    console.error('[updateBoss] AFTER RETURNS attacking=', boss.attacking, 'attackTimer=', boss.attackTimer, 'attackCooldown=', boss.attackCooldown);
-    
-    console.error('[updateBoss] bossChaseMode=', this.bossChaseMode, 'level=', this.level);
     
     // RETREAT MODE: Boss leaves after max attacks - skip all attack logic
     if (this.bossRetreating) {
@@ -665,49 +659,26 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
     
-    console.log('[updateBoss] Called, attackCount:', this.bossAttackCount, 'attackTimer:', boss.attackTimer?.toFixed(2));
-    
-    // Movement pattern - wrapped in try/catch to see silent errors
-    try {
-      console.error('[updateBoss] TIMER UPDATE START dt=', dt, 'attackTimer=', boss.attackTimer, 'boss.instanceId=', boss.instanceId, 'this.boss.instanceId=', this.boss?.instanceId);
-      const beforeAttackTimer = boss.attackTimer;
-      const beforeAttackCooldown = boss.attackCooldown;
-      // Only increment attackTimer when NOT attacking (tween controls the attack)
-      if (!boss.attacking) {
-        boss.attackTimer += dt;
-      }
-      if (boss.attackCooldown > 0) boss.attackCooldown -= dt;
-      if (this.bossRamCooldown > 0) this.bossRamCooldown -= dt;
-      const afterAttackTimer = boss.attackTimer;
-      const afterAttackCooldown = boss.attackCooldown;
-      console.error('[updateBoss] TIMER UPDATE END beforeAttackTimer=', beforeAttackTimer, 'afterAttackTimer=', afterAttackTimer, 'dt=', dt, 'beforeCooldown=', beforeAttackCooldown, 'afterCooldown=', afterAttackCooldown);
-      if (beforeAttackTimer === afterAttackTimer && dt > 0 && !boss.attacking) {
-        console.error('[updateBoss] *** TIMER NOT INCREMENTING! boss===this.boss:', boss === this.boss, 'boss.attackTimer writable:', Object.getOwnPropertyDescriptor(boss, 'attackTimer')?.writable);
-      }
-    } catch (e) {
-      console.error('[updateBoss] Timer error:', e.message, e.stack);
-      return;
+    // Movement pattern
+    // Only increment attackTimer when NOT attacking (tween controls the attack)
+    if (!boss.attacking) {
+      boss.attackTimer += dt;
     }
+    if (boss.attackCooldown > 0) boss.attackCooldown -= dt;
+    if (this.bossRamCooldown > 0) this.bossRamCooldown -= dt;
     
-    try {
-      console.error('[updateBoss] PHASE LOGIC START phase=', boss.phase, 'attacking=', boss.attacking, 'attackTimer=', boss.attackTimer, 'attackCooldown=', boss.attackCooldown, 'attackCount=', this.bossAttackCount);
-      // Check if player has passed the boss vertically (player is above boss)
+    // Check if player has passed the boss vertically (player is above boss)
       const playerPassedBoss = this.player.y < boss.y - 30;
-      console.error('[updateBoss] CHASE CHECK player.y=', this.player.y, 'boss.y=', boss.y, 'playerPassedBoss=', playerPassedBoss, 'bossChaseMode=', this.bossChaseMode);
       
       // Boss chase mode - if player passes boss, boss chases for a bit
       if (playerPassedBoss && !this.bossChaseMode) {
-        console.error('[updateBoss] CHASE MODE TRIGGERED!');
         this.bossChaseMode = true;
         this.bossChaseTimer = 8; // Chase for 8 seconds
         this.flashBanner('BOSS PURSUING!');
         this.game.audioManager?.play('siren');
       }
       
-      console.error('[updateBoss] AFTER CHASE CHECK bossChaseMode=', this.bossChaseMode, 'attacking=', boss.attacking);
-      
       if (this.bossChaseMode) {
-        console.error('[updateBoss] INSIDE CHASE MODE attacking=', boss.attacking);
         this.bossChaseTimer -= dt;
         // Chase player vertically and horizontally - LESS AGGRESSIVE
         // Skip linear interpolation during ram attack
@@ -718,13 +689,11 @@ export default class GameScene extends Phaser.Scene {
         
         // Less aggressive ramming during chase
         if (boss.attackTimer > 1.5 && boss.attackCooldown <= 0) {
-          console.error('[updateBoss] CHASE ATTACK TRIGGERED attackTimer=', boss.attackTimer, 'attackCooldown=', boss.attackCooldown);
           boss.attackTimer = 0;
           boss.attackCooldown = 2.0;
           boss.vy = 0; // Stop velocity during ram
           // Ram vertically downward at player (stop 80px above player)
           const self = this;
-          console.error('[updateBoss] ABOUT TO CREATE CHASE TWEEN');
           this.tweens.add({
             targets: boss,
             y: this.player.y - 80, // Stop 80px above player
@@ -732,7 +701,6 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Power2',
             onComplete: () => { 
               if (!self.boss || !self.boss.active) return;
-              console.error('[updateBoss] ATTACK COMPLETE chase boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
               self.boss.attacking = false;
               self.boss.attackTimer = 0; // Reset timer after attack
               self.boss.vy = 80; // Restore downward velocity
@@ -752,7 +720,6 @@ export default class GameScene extends Phaser.Scene {
         }
       } else {
       // Normal behavior when not chasing
-      console.error('[updateBoss] ENTERING NORMAL BEHAVIOR phase=', boss.phase, 'attacking=', boss.attacking);
       // Phase 1: Slow approach, ram attempts - FIRST ENCOUNTER (level 10) IS MUCH EASIER
       if (boss.phase === 1) {
         // Scale boss difficulty: level 10 = very slow, level 20+ = normal
@@ -780,9 +747,7 @@ export default class GameScene extends Phaser.Scene {
         
         // Ram attack - MUCH LESS FREQUENT on first boss
         const attackInterval = isFirstBoss ? 3.0 : Math.max(2.5, 4 - this.level * 0.15); // TEST: 3s for first boss
-        console.error('[updateBoss] PHASE 1 ATTACK CHECK attackTimer=', boss.attackTimer, 'attackInterval=', attackInterval, 'attackCooldown=', boss.attackCooldown, 'attacking=', boss.attacking);
         if (boss.attackTimer > attackInterval && boss.attackCooldown <= 0) {
-          console.error('[updateBoss] PHASE 1 ATTACK TRIGGERED attackTimer=', boss.attackTimer, 'attackInterval=', attackInterval, 'targetY=', Math.min(this.player.y - 80, 280), 'boss.y=', boss.y);
           boss.attackTimer = 0;
           boss.attackCooldown = isFirstBoss ? 2 : 3; // TEST: shorter cooldown
           boss.attacking = true;
@@ -794,18 +759,15 @@ export default class GameScene extends Phaser.Scene {
           const targetY = isFirstBoss ? Math.min(this.player.y - 80, stopY + 60) : this.player.y - 100;
           console.error('[updateBoss] Phase 1 targetY calc: player.y=', this.player.y, 'stopY=', stopY, 'targetY=', targetY);
           const self = this;
-          console.error('[updateBoss] ABOUT TO CREATE TWEEN');
           this.tweens.add({
             targets: boss,
             y: targetY,
             duration: isFirstBoss ? 1500 : 600, // Much slower ram
             ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
             onStart: () => {
-              console.error('[updateBoss] TWEEN START phase=1 targetY=', targetY, 'boss.y=', boss.y, 'duration=', isFirstBoss ? 1500 : 600);
-            },
+              },
             onComplete: () => { 
               if (!self.boss || !self.boss.active) return;
-              console.error('[updateBoss] ATTACK COMPLETE phase=1 boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
               self.boss.side = self.player.x < self.boss.x ? -1 : 1; 
               self.boss.attacking = false;
               self.boss.attackTimer = 0; // Reset timer after attack
@@ -861,7 +823,6 @@ export default class GameScene extends Phaser.Scene {
           }
           // Also do a vertical ram - much less often on first boss
           if (boss.attackCooldown <= 0) {
-            console.error('[updateBoss] PHASE 2 ATTACK TRIGGERED attackTimer=', boss.attackTimer);
             boss.attackCooldown = isFirstBoss ? 8 : 2.5;
             boss.vy = 0; // Stop velocity during ram
             const self = this;
@@ -875,7 +836,6 @@ export default class GameScene extends Phaser.Scene {
               ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
               onComplete: () => {
                 if (!self.boss || !self.boss.active) return;
-                console.error('[updateBoss] ATTACK COMPLETE phase=2 boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
                 self.boss.attacking = false;
                 self.boss.attackTimer = 0; // Reset timer after attack
                 self.boss.vy = isFirstBoss ? 16 : 50; // Restore downward velocity
@@ -907,11 +867,9 @@ export default class GameScene extends Phaser.Scene {
         }
         // Constant ramming in phase 3
         if (boss.attackCooldown <= 0) {
-          console.error('[updateBoss] PHASE 3 ATTACK TRIGGERED attackTimer=', boss.attackTimer, 'attackCooldown=', boss.attackCooldown);
           boss.attackCooldown = 1.5; // Was 1.0
           boss.vy = 0; // Stop velocity during ram
           const self = this;
-          console.error('[updateBoss] ABOUT TO CREATE PHASE 3 TWEEN');
           this.tweens.add({
             targets: boss,
             y: this.player.y - 100, // Stop 100px above player
@@ -919,7 +877,6 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Power3',
             onComplete: () => {
               if (!self.boss || !self.boss.active) return;
-              console.error('[updateBoss] ATTACK COMPLETE phase=3 boss.instanceId=', self.boss?.instanceId, 'attackCount=', self.bossAttackCount + 1);
               self.boss.attacking = false;
               self.boss.attackTimer = 0; // Reset timer after attack
               self.boss.vy = 80; // Restore downward velocity
@@ -931,8 +888,6 @@ export default class GameScene extends Phaser.Scene {
         }
       }
     }
-    console.error('[updateBoss] PHASE LOGIC END phase=', boss.phase, 'attacking=', boss.attacking, 'attackTimer=', boss.attackTimer, 'attackCount=', this.bossAttackCount);
-    
     // Sync boss physics body with sprite position for accurate collision
     if (this.boss && this.boss.body) this.boss.body.updateFromGameObject();
     
@@ -940,15 +895,6 @@ export default class GameScene extends Phaser.Scene {
     if (!this.boss || !this.boss.active) return;
     
     // Update health bar
-    const ratio = this.bossHealth / this.bossMaxHealth;
-    if (this.bossBarFill) {
-      this.bossBarFill.width = 396 * ratio;
-      this.bossBarFill.fillColor = ratio > 0.5 ? 0xff2200 : (ratio > 0.2 ? 0xffaa00 : 0xff0000);
-    }
-    
-    console.error('[updateBoss] RETREAT/COLLISION START bossAttackCount=', this.bossAttackCount, 'bossMaxAttacks=', this.bossMaxAttacks, 'bossRetreating=', this.bossRetreating);
-    
-    // Check collision with player - player can damage boss by ramming at high speed
     // A cooldown prevents contact damage from ticking every single frame.
     if (this.checkCollision(this.boss)) {
       const canRam = this.bossRamCooldown <= 0;
@@ -981,7 +927,6 @@ export default class GameScene extends Phaser.Scene {
     
     // Boss leaves after max attacks
     if (this.bossAttackCount >= this.bossMaxAttacks) {
-      console.error('[updateBoss] RETREAT TRIGGERED: attackCount=', this.bossAttackCount, 'maxAttacks=', this.bossMaxAttacks);
       if (!this.bossRetreating) {
         this.bossRetreating = true;
         this.flashBanner('BOSS RETREATING!');
@@ -990,25 +935,17 @@ export default class GameScene extends Phaser.Scene {
       this.boss.vy = 200; // Speed away
       this.boss.y += this.boss.vy * dt;
       if (this.boss.y > H + 100) {
-        console.error('[updateBoss] CLEANUP from max attacks');
         this.cleanupBoss();
         return;
       }
     } else if (!this.bossChaseMode && this.boss.y > H + 100) {
       // Boss left the screen
-      console.error('[updateBoss] CLEANUP from off-screen');
       this.cleanupBoss();
       return;
     }
-    console.error('[updateBoss] RETREAT/COLLISION END bossRetreating=', this.bossRetreating, 'bossActive=', this.bossActive);
-  } catch (e) {
-    console.error('[updateBoss] Retreat/collision error:', e.message, e.stack);
-    return;
   }
-}
   
   cleanupBoss() {
-    console.error('[cleanupBoss] Called, this.boss.instanceId=', this.boss?.instanceId, 'stack:', new Error().stack);
     if (this.boss) {
       // Remove from entities array
       const idx = this.entities.indexOf(this.boss);
@@ -1037,7 +974,6 @@ export default class GameScene extends Phaser.Scene {
   }
 
   defeatBoss() {
-    console.error('[defeatBoss] Called, this.boss.instanceId=', this.boss?.instanceId, 'stack:', new Error().stack);
     if (!this.boss) return;
     const bonus = 5000 * this.combo;
     this.score += bonus;
