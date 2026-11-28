@@ -644,6 +644,8 @@ export default class GameScene extends Phaser.Scene {
     // Safety: if boss was removed from entities, stop processing
     if (!this.entities.includes(boss)) return;
     
+    console.error('[updateBoss] AFTER RETURNS attacking=', boss.attacking, 'attackTimer=', boss.attackTimer, 'attackCooldown=', boss.attackCooldown);
+    
     // RETREAT MODE: Boss leaves after max attacks - skip all attack logic
     if (this.bossRetreating) {
       boss.vy = 200; // Speed away downward
@@ -717,6 +719,7 @@ export default class GameScene extends Phaser.Scene {
           boss.vy = 0; // Stop velocity during ram
           // Ram vertically downward at player (stop 80px above player)
           const self = this;
+          console.error('[updateBoss] ABOUT TO CREATE CHASE TWEEN');
           this.tweens.add({
             targets: boss,
             y: this.player.y - 80, // Stop 80px above player
@@ -771,6 +774,7 @@ export default class GameScene extends Phaser.Scene {
         
         // Ram attack - MUCH LESS FREQUENT on first boss
         const attackInterval = isFirstBoss ? 3.0 : Math.max(2.5, 4 - this.level * 0.15); // TEST: 3s for first boss
+        console.error('[updateBoss] PHASE 1 ATTACK CHECK attackTimer=', boss.attackTimer, 'attackInterval=', attackInterval, 'attackCooldown=', boss.attackCooldown, 'attacking=', boss.attacking);
         if (boss.attackTimer > attackInterval && boss.attackCooldown <= 0) {
           console.error('[updateBoss] PHASE 1 ATTACK TRIGGERED attackTimer=', boss.attackTimer, 'attackInterval=', attackInterval, 'targetY=', Math.min(this.player.y - 80, 280), 'boss.y=', boss.y);
           boss.attackTimer = 0;
@@ -784,6 +788,7 @@ export default class GameScene extends Phaser.Scene {
           const targetY = isFirstBoss ? Math.min(this.player.y - 80, stopY + 60) : this.player.y - 100;
           console.error('[updateBoss] Phase 1 targetY calc: player.y=', this.player.y, 'stopY=', stopY, 'targetY=', targetY);
           const self = this;
+          console.error('[updateBoss] ABOUT TO CREATE TWEEN');
           this.tweens.add({
             targets: boss,
             y: targetY,
@@ -850,6 +855,7 @@ export default class GameScene extends Phaser.Scene {
           }
           // Also do a vertical ram - much less often on first boss
           if (boss.attackCooldown <= 0) {
+            console.error('[updateBoss] PHASE 2 ATTACK TRIGGERED attackTimer=', boss.attackTimer);
             boss.attackCooldown = isFirstBoss ? 8 : 2.5;
             boss.vy = 0; // Stop velocity during ram
             const self = this;
@@ -895,9 +901,11 @@ export default class GameScene extends Phaser.Scene {
         }
         // Constant ramming in phase 3
         if (boss.attackCooldown <= 0) {
+          console.error('[updateBoss] PHASE 3 ATTACK TRIGGERED attackTimer=', boss.attackTimer, 'attackCooldown=', boss.attackCooldown);
           boss.attackCooldown = 1.5; // Was 1.0
           boss.vy = 0; // Stop velocity during ram
           const self = this;
+          console.error('[updateBoss] ABOUT TO CREATE PHASE 3 TWEEN');
           this.tweens.add({
             targets: boss,
             y: this.player.y - 100, // Stop 100px above player
