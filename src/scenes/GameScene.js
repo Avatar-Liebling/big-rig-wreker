@@ -646,6 +646,8 @@ export default class GameScene extends Phaser.Scene {
     
     console.error('[updateBoss] AFTER RETURNS attacking=', boss.attacking, 'attackTimer=', boss.attackTimer, 'attackCooldown=', boss.attackCooldown);
     
+    console.error('[updateBoss] bossChaseMode=', this.bossChaseMode, 'level=', this.level);
+    
     // RETREAT MODE: Boss leaves after max attacks - skip all attack logic
     if (this.bossRetreating) {
       boss.vy = 200; // Speed away downward
@@ -702,7 +704,10 @@ export default class GameScene extends Phaser.Scene {
         this.game.audioManager?.play('siren');
       }
       
+      console.error('[updateBoss] AFTER CHASE CHECK bossChaseMode=', this.bossChaseMode, 'attacking=', boss.attacking);
+      
       if (this.bossChaseMode) {
+        console.error('[updateBoss] INSIDE CHASE MODE attacking=', boss.attacking);
         this.bossChaseTimer -= dt;
         // Chase player vertically and horizontally - LESS AGGRESSIVE
         // Skip linear interpolation during ram attack
@@ -747,6 +752,7 @@ export default class GameScene extends Phaser.Scene {
         }
       } else {
       // Normal behavior when not chasing
+      console.error('[updateBoss] ENTERING NORMAL BEHAVIOR phase=', boss.phase, 'attacking=', boss.attacking);
       // Phase 1: Slow approach, ram attempts - FIRST ENCOUNTER (level 10) IS MUCH EASIER
       if (boss.phase === 1) {
         // Scale boss difficulty: level 10 = very slow, level 20+ = normal
