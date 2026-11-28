@@ -658,10 +658,15 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
     
-    // Movement pattern
-    boss.attackTimer += dt;
-    if (boss.attackCooldown > 0) boss.attackCooldown -= dt;
-    if (this.bossRamCooldown > 0) this.bossRamCooldown -= dt;
+    // Movement pattern - wrapped in try/catch to see silent errors
+    try {
+      boss.attackTimer += dt;
+      if (boss.attackCooldown > 0) boss.attackCooldown -= dt;
+      if (this.bossRamCooldown > 0) this.bossRamCooldown -= dt;
+    } catch (e) {
+      console.log('[updateBoss] Timer error:', e.message, e.stack);
+      return;
+    }
     
     // Check if player has passed the boss vertically (player is above boss)
     const playerPassedBoss = this.player.y < boss.y - 30;
