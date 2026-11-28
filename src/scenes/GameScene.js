@@ -1132,16 +1132,18 @@ export default class GameScene extends Phaser.Scene {
     if (!this.started || this.paused) return;
     const dt = Math.min(delta, 40) / 1000;
 
+    // Initialize error capture array if not exists
+    if (!this._errors) this._errors = [];
+
     // Wrap each subsystem so a single error can never freeze the whole game loop.
     // A thrown error inside Phaser's update() would otherwise stop the scene permanently.
     const safe = (name, fn) => {
       try {
         fn();
       } catch (err) {
-        if (!this._errorLogged) {
-          this._errorLogged = true;
-          console.error(`GameScene error in ${name}:`, err);
-        }
+        const errorMsg = `GameScene error in ${name}: ${err.message}\n${err.stack}`;
+        this._errors.push(errorMsg);
+        console.error(errorMsg);
       }
     };
 
