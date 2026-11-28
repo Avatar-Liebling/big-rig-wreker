@@ -695,6 +695,8 @@ export default class GameScene extends Phaser.Scene {
           // Ram vertically downward at player (stop 80px above player)
           const self = this;
           console.error('[updateBoss] CHASE TWEEN START targetY=', this.player.y - 80, 'boss.y=', boss.y, 'duration=500');
+          // Disable physics movement during tween
+          boss.body.moves = false;
           this.tweens.add({
             targets: boss.body,
             y: this.player.y - 80, // Stop 80px above player
@@ -706,9 +708,11 @@ export default class GameScene extends Phaser.Scene {
             onComplete: () => { 
               console.error('[updateBoss] CHASE TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
               if (!self.boss || !self.boss.active) return;
+              self.boss.body.moves = true; // Re-enable physics
               self.boss.attacking = false;
               self.boss.attackTimer = 0; // Reset timer after attack
               self.boss.vy = 80; // Restore downward velocity
+              self.boss.body.setVelocityY(self.boss.vy); // Apply velocity to physics body
               self.bossAttackCount++;
               console.error('[updateBoss] CHASE ATTACK COMPLETE attackCount=', self.bossAttackCount);
               if (self.bossAttackText) {
@@ -766,6 +770,8 @@ export default class GameScene extends Phaser.Scene {
           console.error('[updateBoss] Phase 1 targetY calc: player.y=', this.player.y, 'stopY=', stopY, 'targetY=', targetY);
           const self = this;
           console.error('[updateBoss] PHASE 1 TWEEN START targetY=', targetY, 'boss.y=', boss.y, 'duration=', isFirstBoss ? 1500 : 600);
+          // Disable physics movement during tween to prevent physics from fighting the tween
+          boss.body.moves = false;
           this.tweens.add({
             targets: boss.body,
             y: targetY,
@@ -777,10 +783,12 @@ export default class GameScene extends Phaser.Scene {
             onComplete: () => { 
               console.error('[updateBoss] PHASE 1 TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
               if (!self.boss || !self.boss.active) return;
+              self.boss.body.moves = true; // Re-enable physics
               self.boss.side = self.player.x < self.boss.x ? -1 : 1; 
               self.boss.attacking = false;
               self.boss.attackTimer = 0; // Reset timer after attack
               self.boss.vy = isFirstBoss ? 8 : 40; // Restore downward velocity
+              self.boss.body.setVelocityY(self.boss.vy); // Apply velocity to physics body
               self.bossAttackCount++;
               console.error('[updateBoss] PHASE 1 ATTACK COMPLETE attackCount=', self.bossAttackCount);
               if (self.bossAttackText) {
@@ -840,6 +848,8 @@ export default class GameScene extends Phaser.Scene {
             const stopY = isFirstBoss ? 200 : 120;
             const targetY = isFirstBoss ? Math.min(this.player.y - 80, stopY + 60) : this.player.y - 80;
             console.error('[updateBoss] PHASE 2 TWEEN START targetY=', targetY, 'boss.y=', boss.y, 'duration=', isFirstBoss ? 1200 : 500);
+            // Disable physics movement during tween
+            boss.body.moves = false;
             this.tweens.add({
               targets: boss.body,
               y: targetY,
@@ -851,9 +861,11 @@ export default class GameScene extends Phaser.Scene {
               onComplete: () => {
                 console.error('[updateBoss] PHASE 2 TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
                 if (!self.boss || !self.boss.active) return;
+                self.boss.body.moves = true; // Re-enable physics
                 self.boss.attacking = false;
                 self.boss.attackTimer = 0; // Reset timer after attack
                 self.boss.vy = isFirstBoss ? 16 : 50; // Restore downward velocity
+                self.boss.body.setVelocityY(self.boss.vy); // Apply velocity to physics body
                 self.bossAttackCount++;
                 console.error('[updateBoss] PHASE 2 ATTACK COMPLETE attackCount=', self.bossAttackCount);
               }
@@ -887,6 +899,8 @@ export default class GameScene extends Phaser.Scene {
           boss.vy = 0; // Stop velocity during ram
           const self = this;
           console.error('[updateBoss] PHASE 3 TWEEN START targetY=', this.player.y - 100, 'boss.y=', boss.y, 'duration=400');
+          // Disable physics movement during tween
+          boss.body.moves = false;
           this.tweens.add({
             targets: boss.body,
             y: this.player.y - 100, // Stop 100px above player
@@ -898,9 +912,11 @@ export default class GameScene extends Phaser.Scene {
             onComplete: () => {
               console.error('[updateBoss] PHASE 3 TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
               if (!self.boss || !self.boss.active) return;
+              self.boss.body.moves = true; // Re-enable physics
               self.boss.attacking = false;
               self.boss.attackTimer = 0; // Reset timer after attack
               self.boss.vy = 80; // Restore downward velocity
+              self.boss.body.setVelocityY(self.boss.vy); // Apply velocity to physics body
               self.bossAttackCount++;
               console.error('[updateBoss] PHASE 3 ATTACK COMPLETE attackCount=', self.bossAttackCount);
             }
