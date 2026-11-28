@@ -696,12 +696,12 @@ export default class GameScene extends Phaser.Scene {
           const self = this;
           console.error('[updateBoss] CHASE TWEEN START targetY=', this.player.y - 80, 'boss.y=', boss.y, 'duration=500');
           this.tweens.add({
-            targets: boss,
+            targets: boss.body,
             y: this.player.y - 80, // Stop 80px above player
             duration: 500,
             ease: 'Power2',
             onStart: () => {
-              console.error('[updateBoss] CHASE TWEEN ONSTART boss.y=', boss.y);
+              console.error('[updateBoss] CHASE TWEEN ONSTART boss.body.y=', boss.body.y);
             },
             onComplete: () => { 
               console.error('[updateBoss] CHASE TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
@@ -767,12 +767,12 @@ export default class GameScene extends Phaser.Scene {
           const self = this;
           console.error('[updateBoss] PHASE 1 TWEEN START targetY=', targetY, 'boss.y=', boss.y, 'duration=', isFirstBoss ? 1500 : 600);
           this.tweens.add({
-            targets: boss,
+            targets: boss.body,
             y: targetY,
             duration: isFirstBoss ? 1500 : 600, // Much slower ram
             ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
             onStart: () => {
-              console.error('[updateBoss] PHASE 1 TWEEN ONSTART boss.y=', boss.y);
+              console.error('[updateBoss] PHASE 1 TWEEN ONSTART boss.body.y=', boss.body.y);
             },
             onComplete: () => { 
               console.error('[updateBoss] PHASE 1 TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
@@ -841,12 +841,12 @@ export default class GameScene extends Phaser.Scene {
             const targetY = isFirstBoss ? Math.min(this.player.y - 80, stopY + 60) : this.player.y - 80;
             console.error('[updateBoss] PHASE 2 TWEEN START targetY=', targetY, 'boss.y=', boss.y, 'duration=', isFirstBoss ? 1200 : 500);
             this.tweens.add({
-              targets: boss,
+              targets: boss.body,
               y: targetY,
               duration: isFirstBoss ? 1200 : 500,
               ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
               onStart: () => {
-                console.error('[updateBoss] PHASE 2 TWEEN ONSTART boss.y=', boss.y);
+                console.error('[updateBoss] PHASE 2 TWEEN ONSTART boss.body.y=', boss.body.y);
               },
               onComplete: () => {
                 console.error('[updateBoss] PHASE 2 TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
@@ -888,12 +888,12 @@ export default class GameScene extends Phaser.Scene {
           const self = this;
           console.error('[updateBoss] PHASE 3 TWEEN START targetY=', this.player.y - 100, 'boss.y=', boss.y, 'duration=400');
           this.tweens.add({
-            targets: boss,
+            targets: boss.body,
             y: this.player.y - 100, // Stop 100px above player
             duration: 400, // Was 350
             ease: 'Power3',
             onStart: () => {
-              console.error('[updateBoss] PHASE 3 TWEEN ONSTART boss.y=', boss.y);
+              console.error('[updateBoss] PHASE 3 TWEEN ONSTART boss.body.y=', boss.body.y);
             },
             onComplete: () => {
               console.error('[updateBoss] PHASE 3 TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
