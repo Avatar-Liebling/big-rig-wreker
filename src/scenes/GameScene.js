@@ -698,12 +698,12 @@ export default class GameScene extends Phaser.Scene {
           // Disable physics movement during tween
           boss.body.moves = false;
           this.tweens.add({
-            targets: boss.body,
+            targets: boss, // Tween the SPRITE, body will follow via updateFromGameObject()
             y: this.player.y - 80, // Stop 80px above player
             duration: 500,
             ease: 'Power2',
             onStart: () => {
-              console.error('[updateBoss] CHASE TWEEN ONSTART boss.body.y=', boss.body.y);
+              console.error('[updateBoss] CHASE TWEEN ONSTART boss.y=', boss.y);
             },
             onComplete: () => { 
               console.error('[updateBoss] CHASE TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
@@ -773,12 +773,12 @@ export default class GameScene extends Phaser.Scene {
           // Disable physics movement during tween to prevent physics from fighting the tween
           boss.body.moves = false;
           this.tweens.add({
-            targets: boss.body,
+            targets: boss, // Tween the SPRITE, body will follow via updateFromGameObject()
             y: targetY,
             duration: isFirstBoss ? 1500 : 600, // Much slower ram
             ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
             onStart: () => {
-              console.error('[updateBoss] PHASE 1 TWEEN ONSTART boss.body.y=', boss.body.y);
+              console.error('[updateBoss] PHASE 1 TWEEN ONSTART boss.y=', boss.y);
             },
             onComplete: () => { 
               console.error('[updateBoss] PHASE 1 TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
@@ -851,12 +851,12 @@ export default class GameScene extends Phaser.Scene {
             // Disable physics movement during tween
             boss.body.moves = false;
             this.tweens.add({
-              targets: boss.body,
+              targets: boss, // Tween the SPRITE, body will follow via updateFromGameObject()
               y: targetY,
               duration: isFirstBoss ? 1200 : 500,
               ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
               onStart: () => {
-                console.error('[updateBoss] PHASE 2 TWEEN ONSTART boss.body.y=', boss.body.y);
+                console.error('[updateBoss] PHASE 2 TWEEN ONSTART boss.y=', boss.y);
               },
               onComplete: () => {
                 console.error('[updateBoss] PHASE 2 TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
@@ -902,12 +902,12 @@ export default class GameScene extends Phaser.Scene {
           // Disable physics movement during tween
           boss.body.moves = false;
           this.tweens.add({
-            targets: boss.body,
+            targets: boss, // Tween the SPRITE, body will follow via updateFromGameObject()
             y: this.player.y - 100, // Stop 100px above player
             duration: 400, // Was 350
             ease: 'Power3',
             onStart: () => {
-              console.error('[updateBoss] PHASE 3 TWEEN ONSTART boss.body.y=', boss.body.y);
+              console.error('[updateBoss] PHASE 3 TWEEN ONSTART boss.y=', boss.y);
             },
             onComplete: () => {
               console.error('[updateBoss] PHASE 3 TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
