@@ -177,9 +177,9 @@ export default class GameScene extends Phaser.Scene {
     // Physics body for collision - cover full truck length, cab at front (top at -90 deg)
     // Visual: 92 tall x 46 wide at -90 deg. Body should cover cab area at top.
     // Visual top = player.y - 46 = 294, Visual bottom = player.y + 46 = 386
-    // Body height 75, offset -22 puts top at ~293 (cab) and bottom at ~368
-    this.player.body.setSize(46, 75);  // width=visual width, height=covers cab + engine
-    this.player.body.setOffset(0, -22);  // shift body up to cover cab (front)
+    // Body height 92 (full visual height), offset -46 puts top at 294 (visual top/cab)
+    this.player.body.setSize(46, 92);  // width=visual width, height=full visual height
+    this.player.body.setOffset(0, -46);  // shift body up to match visual top (cab)
     this.player.setCollideWorldBounds(true);
 
     this.trailer = this.add.image(this.player.x, this.player.y + 62, 'trailer');
@@ -189,7 +189,7 @@ export default class GameScene extends Phaser.Scene {
     
     // Collision bounds for player + trailer (used for precise collision)
     // Player bounds: match physics body for accurate collision
-    this.playerBounds = { width: 46, height: 75 };
+    this.playerBounds = { width: 46, height: 92 };
     this.trailerBounds = { width: 62, height: 32 };
 
     // Enhanced exhaust with multiple layers - MORE VISIBLE
@@ -640,6 +640,23 @@ export default class GameScene extends Phaser.Scene {
     if (!boss || !boss.active || !this.bossActive || !boss.scene) return;
     // Safety: if boss was removed from entities, stop processing
     if (!this.entities.includes(boss)) return;
+    
+    // RETREAT MODE: Boss leaves after max attacks - skip all attack logic
+    if (this.bossRetreating) {
+      boss.vy = 200; // Speed away downward
+      boss.y += boss.vy * dt;
+      boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.02); // Drift slightly toward player x
+      
+      // Sync physics body
+      if (boss.body) boss.body.updateFromGameObject();
+      
+      // Check if boss left screen
+      if (boss.y > this.cameras.main.height + 100) {
+        this.cleanupBoss();
+        return;
+      }
+      return;
+    }
     
     // Movement pattern
     boss.attackTimer += dt;
@@ -1291,11 +1308,12 @@ export default class GameScene extends Phaser.Scene {
     
     // Vehicle-specific physics body configs (width, height, offsetX, offsetY)
     // All vehicles face up (-90 deg), so cab is at top (smaller Y)
+    // Use full visual height for body, offset by -visualHeight/2 to align top with visual top
     const bodyConfigs = {
-      'truck': { width: 46, height: 75, offsetX: 0, offsetY: -22 },
-      'big_rig': { width: 55, height: 85, offsetX: 0, offsetY: -25 },
-      'road_train': { width: 65, height: 100, offsetX: 0, offsetY: -28 },
-      'juggernaut': { width: 75, height: 115, offsetX: 0, offsetY: -30 },
+      'truck': { width: 46, height: 92, offsetX: 0, offsetY: -46 },
+      'big_rig': { width: 55, height: 110, offsetX: 0, offsetY: -55 },
+      'road_train': { width: 65, height: 130, offsetX: 0, offsetY: -65 },
+      'juggernaut': { width: 75, height: 150, offsetX: 0, offsetY: -75 },
     };
     const bodyCfg = bodyConfigs[checkpoint.vehicle] || bodyConfigs['truck'];
     
@@ -1595,6 +1613,13 @@ export default class GameScene extends Phaser.Scene {
         e.x = Phaser.Math.Linear(e.x, e.targetLane, 0.05);
       }
 
+      // Skip boss - its position is managed entirely by updateBoss()
+      if (e.kind === 'boss') {
+        // Still sync physics body for collision
+        if (e.body) e.body.updateFromGameObject();
+        continue;
+      }
+
       // Scroll down the road
       e.y += dy - (e.vy || 0) * dt;
       if (e.kind === 'power') e.y += Math.sin(this.time.now / 200 + e.x) * 0.2;
@@ -1610,9 +1635,10 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // --- PASS 2: AI vehicle separation (snapshot so array changes don't break it) ---
+    // Exclude boss - its position is managed entirely by updateBoss()
     const traffic = this.entities.filter(e =>
       e && e.active && !e.wrecked && !e.collected && e.scene && !e.destroyed &&
-      (e.kind === 'car' || e.kind === 'police' || e.kind === 'boss' ||
+      (e.kind === 'car' || e.kind === 'police' ||
        e.kind === 'hard' || e.kind === 'container' || e.kind === 'debris')
     );
 
