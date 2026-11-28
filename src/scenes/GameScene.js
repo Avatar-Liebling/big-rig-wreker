@@ -662,15 +662,18 @@ export default class GameScene extends Phaser.Scene {
     
     // Movement pattern - wrapped in try/catch to see silent errors
     try {
+      console.error('[updateBoss] TIMER UPDATE START dt=', dt, 'attackTimer=', boss.attackTimer);
       boss.attackTimer += dt;
       if (boss.attackCooldown > 0) boss.attackCooldown -= dt;
       if (this.bossRamCooldown > 0) this.bossRamCooldown -= dt;
+      console.error('[updateBoss] TIMER UPDATE END attackTimer=', boss.attackTimer, 'attackCooldown=', boss.attackCooldown);
     } catch (e) {
-      console.log('[updateBoss] Timer error:', e.message, e.stack);
+      console.error('[updateBoss] Timer error:', e.message, e.stack);
       return;
     }
     
     try {
+      console.error('[updateBoss] PHASE LOGIC START phase=', boss.phase, 'attacking=', boss.attacking, 'attackTimer=', boss.attackTimer, 'attackCooldown=', boss.attackCooldown, 'attackCount=', this.bossAttackCount);
       // Check if player has passed the boss vertically (player is above boss)
       const playerPassedBoss = this.player.y < boss.y - 30;
       
@@ -881,6 +884,7 @@ export default class GameScene extends Phaser.Scene {
         }
       }
     }
+    console.error('[updateBoss] PHASE LOGIC END phase=', boss.phase, 'attacking=', boss.attacking, 'attackTimer=', boss.attackTimer, 'attackCount=', this.bossAttackCount);
     
     // Sync boss physics body with sprite position for accurate collision
     if (this.boss && this.boss.body) this.boss.body.updateFromGameObject();
@@ -894,6 +898,8 @@ export default class GameScene extends Phaser.Scene {
       this.bossBarFill.width = 396 * ratio;
       this.bossBarFill.fillColor = ratio > 0.5 ? 0xff2200 : (ratio > 0.2 ? 0xffaa00 : 0xff0000);
     }
+    
+    console.error('[updateBoss] RETREAT/COLLISION START bossAttackCount=', this.bossAttackCount, 'bossMaxAttacks=', this.bossMaxAttacks, 'bossRetreating=', this.bossRetreating);
     
     // Check collision with player - player can damage boss by ramming at high speed
     // A cooldown prevents contact damage from ticking every single frame.
@@ -944,8 +950,9 @@ export default class GameScene extends Phaser.Scene {
       this.cleanupBoss();
       return;
     }
+    console.error('[updateBoss] RETREAT/COLLISION END bossRetreating=', this.bossRetreating, 'bossActive=', this.bossActive);
   } catch (e) {
-    console.log('[updateBoss] Retreat/collision error:', e.message, e.stack);
+    console.error('[updateBoss] Retreat/collision error:', e.message, e.stack);
     return;
   }
 }
