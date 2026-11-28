@@ -639,6 +639,7 @@ export default class GameScene extends Phaser.Scene {
 
   updateBoss(dt) {
     const boss = this.boss;
+    console.error('[updateBoss] ENTRY boss=', !!boss, 'active=', boss?.active, 'bossActive=', this.bossActive, 'scene=', boss?.scene, 'entities.includes=', this.entities.includes(boss), 'attacking=', boss?.attacking, 'attackTimer=', boss?.attackTimer, 'attackCooldown=', boss?.attackCooldown, 'phase=', boss?.phase, 'vy=', boss?.vy, 'y=', boss?.y);
     if (!boss || !boss.active || !this.bossActive || !boss.scene) return;
     // Safety: if boss was removed from entities, stop processing
     if (!this.entities.includes(boss)) return;
