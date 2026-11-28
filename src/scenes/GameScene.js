@@ -766,10 +766,11 @@ export default class GameScene extends Phaser.Scene {
         }
         
         // Ram attack - MUCH LESS FREQUENT on first boss
-        const attackInterval = isFirstBoss ? Math.max(8, 10 - this.level * 0.1) : Math.max(2.5, 4 - this.level * 0.15);
+        const attackInterval = isFirstBoss ? 3.0 : Math.max(2.5, 4 - this.level * 0.15); // TEST: 3s for first boss
         if (boss.attackTimer > attackInterval && boss.attackCooldown <= 0) {
+          console.error('[updateBoss] ATTACK TRIGGERED phase=1 attackTimer=', boss.attackTimer, 'attackInterval=', attackInterval, 'targetY=', Math.min(this.player.y - 80, 280), 'boss.y=', boss.y);
           boss.attackTimer = 0;
-          boss.attackCooldown = isFirstBoss ? 8 : 3; // Much longer cooldown
+          boss.attackCooldown = isFirstBoss ? 2 : 3; // TEST: shorter cooldown
           boss.attacking = true;
           boss.vy = 0; // Stop velocity during ram
           // VERTICAL RAM - boss charges down at player (shorter distance on first boss)
@@ -777,6 +778,7 @@ export default class GameScene extends Phaser.Scene {
           // For first boss, clamp is at Y=220, so target must be > 220 (lower on screen, larger Y) to charge DOWN toward player
           const stopY = isFirstBoss ? 220 : 120;
           const targetY = isFirstBoss ? Math.min(this.player.y - 80, stopY + 60) : this.player.y - 100;
+          console.error('[updateBoss] Phase 1 targetY calc: player.y=', this.player.y, 'stopY=', stopY, 'targetY=', targetY);
           const self = this;
           this.tweens.add({
             targets: boss,
