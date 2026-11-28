@@ -662,11 +662,18 @@ export default class GameScene extends Phaser.Scene {
     
     // Movement pattern - wrapped in try/catch to see silent errors
     try {
-      console.error('[updateBoss] TIMER UPDATE START dt=', dt, 'attackTimer=', boss.attackTimer);
+      console.error('[updateBoss] TIMER UPDATE START dt=', dt, 'attackTimer=', boss.attackTimer, 'boss.id=', boss.id, 'this.boss.id=', this.boss?.id);
+      const beforeAttackTimer = boss.attackTimer;
+      const beforeAttackCooldown = boss.attackCooldown;
       boss.attackTimer += dt;
       if (boss.attackCooldown > 0) boss.attackCooldown -= dt;
       if (this.bossRamCooldown > 0) this.bossRamCooldown -= dt;
-      console.error('[updateBoss] TIMER UPDATE END attackTimer=', boss.attackTimer, 'attackCooldown=', boss.attackCooldown);
+      const afterAttackTimer = boss.attackTimer;
+      const afterAttackCooldown = boss.attackCooldown;
+      console.error('[updateBoss] TIMER UPDATE END beforeAttackTimer=', beforeAttackTimer, 'afterAttackTimer=', afterAttackTimer, 'dt=', dt, 'beforeCooldown=', beforeAttackCooldown, 'afterCooldown=', afterAttackCooldown);
+      if (beforeAttackTimer === afterAttackTimer && dt > 0) {
+        console.error('[updateBoss] *** TIMER NOT INCREMENTING! boss===this.boss:', boss === this.boss, 'boss.attackTimer writable:', Object.getOwnPropertyDescriptor(boss, 'attackTimer')?.writable);
+      }
     } catch (e) {
       console.error('[updateBoss] Timer error:', e.message, e.stack);
       return;
@@ -934,6 +941,7 @@ export default class GameScene extends Phaser.Scene {
     
     // Boss leaves after max attacks
     if (this.bossAttackCount >= this.bossMaxAttacks) {
+      console.error('[updateBoss] RETREAT TRIGGERED: attackCount=', this.bossAttackCount, 'maxAttacks=', this.bossMaxAttacks);
       if (!this.bossRetreating) {
         this.bossRetreating = true;
         this.flashBanner('BOSS RETREATING!');
@@ -942,11 +950,13 @@ export default class GameScene extends Phaser.Scene {
       this.boss.vy = 200; // Speed away
       this.boss.y += this.boss.vy * dt;
       if (this.boss.y > H + 100) {
+        console.error('[updateBoss] CLEANUP from max attacks');
         this.cleanupBoss();
         return;
       }
     } else if (!this.bossChaseMode && this.boss.y > H + 100) {
       // Boss left the screen
+      console.error('[updateBoss] CLEANUP from off-screen');
       this.cleanupBoss();
       return;
     }
