@@ -657,18 +657,22 @@ export default class GameScene extends Phaser.Scene {
     if (this.bossChaseMode) {
       this.bossChaseTimer -= dt;
       // Chase player vertically and horizontally - LESS AGGRESSIVE
-      boss.y = Phaser.Math.Linear(boss.y, this.player.y - 80, 0.03); // Stay further behind player, slower
-      boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.05); // Slower horizontal tracking
+      // Skip linear interpolation during ram attack
+      if (!boss.attacking) {
+        boss.y = Phaser.Math.Linear(boss.y, this.player.y - 80, 0.03); // Stay further behind player, slower
+        boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.05); // Slower horizontal tracking
+      }
       
       // Less aggressive ramming during chase
       if (boss.attackTimer > 1.5 && boss.attackCooldown <= 0) {
         boss.attackTimer = 0;
         boss.attackCooldown = 2.0;
-        // Ram vertically downward at player
+        boss.vy = 0; // Stop velocity during ram
+        // Ram vertically downward at player (stop 80px above player)
         const self = this;
         this.tweens.add({
           targets: boss,
-          y: this.player.y + 80, // Ram past player but not as far
+          y: this.player.y - 80, // Stop 80px above player
           duration: 500,
           ease: 'Power2',
           onComplete: () => { 
@@ -697,13 +701,16 @@ export default class GameScene extends Phaser.Scene {
         const bossSpeed = isFirstBoss ? 0.2 : 1.0; // Even slower
         const bossAttackSpeed = isFirstBoss ? 3.0 : 1.0;
         
-        boss.y += boss.vy * dt * bossSpeed;
-        // Stop much further back - boss should never overlap player
-        // Player is typically around Y=340, so boss should stop at Y=220
-        const stopY = isFirstBoss ? 220 : 120;
-        if (boss.y > stopY) {
-          boss.y = stopY; // Clamp position
-          boss.vy = 0; // STOP completely
+        // Don't move with velocity during ram attack (tween handles position)
+        if (!boss.attacking) {
+          boss.y += boss.vy * dt * bossSpeed;
+          // Stop much further back - boss should never overlap player
+          // Player is typically around Y=340, so boss should stop at Y=220
+          const stopY = isFirstBoss ? 220 : 120;
+          if (boss.y > stopY) {
+            boss.y = stopY; // Clamp position
+            boss.vy = 0; // STOP completely
+          }
         }
         
         // Side-to-side sweeping - much slower on first boss
@@ -718,9 +725,10 @@ export default class GameScene extends Phaser.Scene {
           boss.attackTimer = 0;
           boss.attackCooldown = isFirstBoss ? 8 : 3; // Much longer cooldown
           boss.attacking = true;
+          boss.vy = 0; // Stop velocity during ram
           // VERTICAL RAM - boss charges down at player (shorter distance on first boss)
-          // Don't ram all the way to player - stop well short
-          const targetY = this.player.y + (isFirstBoss ? 100 : 100); // Stop 100px below player
+          // Don't ram all the way to player - stop well short (100px ABOVE player)
+          const targetY = this.player.y - (isFirstBoss ? 100 : 100); // Stop 100px above player
           const self = this;
           this.tweens.add({
             targets: boss,
@@ -751,13 +759,19 @@ export default class GameScene extends Phaser.Scene {
       // Phase 2: Faster, spawns minions - FIRST ENCOUNTER MUCH EASIER
       else if (boss.phase === 2) {
         const isFirstBoss = this.level <= 12;
-        boss.y += boss.vy * dt * (isFirstBoss ? 0.3 : 1.0); // Even slower
-        boss.x += boss.side * (isFirstBoss ? 25 : 100) * dt;
-        if (boss.x > ROAD_RIGHT - 40 || boss.x < ROAD_LEFT + 40) boss.side *= -1;
-        // Keep boss further back in phase 2 too - clamp position
-        if (isFirstBoss && boss.y > 200) {
-          boss.y = 200; // Clamp position
-          boss.vy = 0; // Stop moving down
+        // Don't move with velocity during ram attack
+        if (!boss.attacking) {
+          boss.y += boss.vy * dt * (isFirstBoss ? 0.3 : 1.0); // Even slower
+          boss.x += boss.side * (isFirstBoss ? 25 : 100) * dt;
+          if (boss.x > ROAD_RIGHT - 40 || boss.x < ROAD_LEFT + 40) boss.side *= -1;
+          // Keep boss further back in phase 2 too - clamp position
+          if (isFirstBoss && boss.y > 200) {
+            boss.y = 200; // Clamp position
+            boss.vy = 0; // Stop moving down
+          }
+        } else {
+          // Still allow horizontal movement during attack for visual effect
+          boss.x += boss.side * (isFirstBoss ? 25 : 100) * dt;
         }
         
         if (boss.attackTimer > (isFirstBoss ? 6 : 1.8)) {
@@ -777,10 +791,11 @@ export default class GameScene extends Phaser.Scene {
           // Also do a vertical ram - much less often on first boss
           if (boss.attackCooldown <= 0) {
             boss.attackCooldown = isFirstBoss ? 8 : 2.5;
+            boss.vy = 0; // Stop velocity during ram
             const self = this;
             this.tweens.add({
               targets: boss,
-              y: this.player.y + (isFirstBoss ? 100 : 80), // Stop well short
+              y: this.player.y - (isFirstBoss ? 100 : 80), // Stop well short (above player)
               duration: isFirstBoss ? 1200 : 500,
               ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
               onComplete: () => {
@@ -800,19 +815,26 @@ export default class GameScene extends Phaser.Scene {
       }
       // Phase 3: Desperate, charges - MOST AGGRESSIVE (as intended for final phase)
       else {
-        boss.vy = 80; // Slower vertical
-        boss.y += boss.vy * dt;
-        // Don't let boss get too close to player vertically
-        if (boss.y > this.player.y - 80) boss.y = this.player.y - 80;
-        // Charge directly at player - both X and Y
-        boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.06); // Was 0.08
+        // Don't move with velocity during ram attack
+        if (!boss.attacking) {
+          boss.vy = 80; // Slower vertical
+          boss.y += boss.vy * dt;
+          // Don't let boss get too close to player vertically
+          if (boss.y > this.player.y - 80) boss.y = this.player.y - 80;
+          // Charge directly at player - both X and Y
+          boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.06); // Was 0.08
+        } else {
+          // Still allow horizontal movement during attack for visual effect
+          boss.x = Phaser.Math.Linear(boss.x, this.player.x, 0.06);
+        }
         // Constant ramming in phase 3
         if (boss.attackCooldown <= 0) {
           boss.attackCooldown = 1.5; // Was 1.0
+          boss.vy = 0; // Stop velocity during ram
           const self = this;
           this.tweens.add({
             targets: boss,
-            y: this.player.y + 100, // Stop well below player
+            y: this.player.y - 100, // Stop 100px above player
             duration: 400, // Was 350
             ease: 'Power3',
             onComplete: () => {
