@@ -694,17 +694,23 @@ export default class GameScene extends Phaser.Scene {
           boss.vy = 0; // Stop velocity during ram
           // Ram vertically downward at player (stop 80px above player)
           const self = this;
+          console.error('[updateBoss] CHASE TWEEN START targetY=', this.player.y - 80, 'boss.y=', boss.y, 'duration=500');
           this.tweens.add({
             targets: boss,
             y: this.player.y - 80, // Stop 80px above player
             duration: 500,
             ease: 'Power2',
+            onStart: () => {
+              console.error('[updateBoss] CHASE TWEEN ONSTART boss.y=', boss.y);
+            },
             onComplete: () => { 
+              console.error('[updateBoss] CHASE TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
               if (!self.boss || !self.boss.active) return;
               self.boss.attacking = false;
               self.boss.attackTimer = 0; // Reset timer after attack
               self.boss.vy = 80; // Restore downward velocity
               self.bossAttackCount++;
+              console.error('[updateBoss] CHASE ATTACK COMPLETE attackCount=', self.bossAttackCount);
               if (self.bossAttackText) {
                 self.bossAttackText.setText(`ATTACKS: ${self.bossAttackCount} / ${self.bossMaxAttacks}`);
               }
@@ -759,20 +765,24 @@ export default class GameScene extends Phaser.Scene {
           const targetY = isFirstBoss ? Math.min(this.player.y - 80, stopY + 60) : this.player.y - 100;
           console.error('[updateBoss] Phase 1 targetY calc: player.y=', this.player.y, 'stopY=', stopY, 'targetY=', targetY);
           const self = this;
+          console.error('[updateBoss] PHASE 1 TWEEN START targetY=', targetY, 'boss.y=', boss.y, 'duration=', isFirstBoss ? 1500 : 600);
           this.tweens.add({
             targets: boss,
             y: targetY,
             duration: isFirstBoss ? 1500 : 600, // Much slower ram
             ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
             onStart: () => {
-              },
+              console.error('[updateBoss] PHASE 1 TWEEN ONSTART boss.y=', boss.y);
+            },
             onComplete: () => { 
+              console.error('[updateBoss] PHASE 1 TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
               if (!self.boss || !self.boss.active) return;
               self.boss.side = self.player.x < self.boss.x ? -1 : 1; 
               self.boss.attacking = false;
               self.boss.attackTimer = 0; // Reset timer after attack
               self.boss.vy = isFirstBoss ? 8 : 40; // Restore downward velocity
               self.bossAttackCount++;
+              console.error('[updateBoss] PHASE 1 ATTACK COMPLETE attackCount=', self.bossAttackCount);
               if (self.bossAttackText) {
                 self.bossAttackText.setText(`ATTACKS: ${self.bossAttackCount} / ${self.bossMaxAttacks}`);
               }
@@ -829,17 +839,23 @@ export default class GameScene extends Phaser.Scene {
             // Phase 2 clamp for first boss is at Y=200, so target must be > 200 (lower on screen, larger Y) to charge DOWN toward player
             const stopY = isFirstBoss ? 200 : 120;
             const targetY = isFirstBoss ? Math.min(this.player.y - 80, stopY + 60) : this.player.y - 80;
+            console.error('[updateBoss] PHASE 2 TWEEN START targetY=', targetY, 'boss.y=', boss.y, 'duration=', isFirstBoss ? 1200 : 500);
             this.tweens.add({
               targets: boss,
               y: targetY,
               duration: isFirstBoss ? 1200 : 500,
               ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
+              onStart: () => {
+                console.error('[updateBoss] PHASE 2 TWEEN ONSTART boss.y=', boss.y);
+              },
               onComplete: () => {
+                console.error('[updateBoss] PHASE 2 TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
                 if (!self.boss || !self.boss.active) return;
                 self.boss.attacking = false;
                 self.boss.attackTimer = 0; // Reset timer after attack
                 self.boss.vy = isFirstBoss ? 16 : 50; // Restore downward velocity
                 self.bossAttackCount++;
+                console.error('[updateBoss] PHASE 2 ATTACK COMPLETE attackCount=', self.bossAttackCount);
               }
             });
             this.emitRadial(boss.x, boss.y, 'spark_shower', 6, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' });
@@ -870,17 +886,23 @@ export default class GameScene extends Phaser.Scene {
           boss.attackCooldown = 1.5; // Was 1.0
           boss.vy = 0; // Stop velocity during ram
           const self = this;
+          console.error('[updateBoss] PHASE 3 TWEEN START targetY=', this.player.y - 100, 'boss.y=', boss.y, 'duration=400');
           this.tweens.add({
             targets: boss,
             y: this.player.y - 100, // Stop 100px above player
             duration: 400, // Was 350
             ease: 'Power3',
+            onStart: () => {
+              console.error('[updateBoss] PHASE 3 TWEEN ONSTART boss.y=', boss.y);
+            },
             onComplete: () => {
+              console.error('[updateBoss] PHASE 3 TWEEN ONCOMPLETE boss.active=', self.boss?.active, 'instanceId=', self.boss?.instanceId);
               if (!self.boss || !self.boss.active) return;
               self.boss.attacking = false;
               self.boss.attackTimer = 0; // Reset timer after attack
               self.boss.vy = 80; // Restore downward velocity
               self.bossAttackCount++;
+              console.error('[updateBoss] PHASE 3 ATTACK COMPLETE attackCount=', self.bossAttackCount);
             }
           });
           this.emitRadial(boss.x, boss.y, 'spark_shower', 8, { speed: { min: 150, max: 400 }, lifespan: 250, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, gravityY: 30, blendMode: 'ADD' }); // Was 10
