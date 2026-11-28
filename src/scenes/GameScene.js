@@ -747,8 +747,10 @@ export default class GameScene extends Phaser.Scene {
           boss.attacking = true;
           boss.vy = 0; // Stop velocity during ram
           // VERTICAL RAM - boss charges down at player (shorter distance on first boss)
-          // Don't ram all the way to player - stop well short (100px ABOVE player)
-          const targetY = this.player.y - (isFirstBoss ? 100 : 100); // Stop 100px above player
+          // Don't ram all the way to player - stop well short
+          // For first boss, clamp is at Y=220, so target must be <= 220 (higher on screen)
+          const stopY = isFirstBoss ? 220 : 120;
+          const targetY = isFirstBoss ? Math.min(this.player.y - 120, stopY) : this.player.y - 100;
           const self = this;
           this.tweens.add({
             targets: boss,
@@ -757,7 +759,7 @@ export default class GameScene extends Phaser.Scene {
             ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
             onComplete: () => { 
               if (!self.boss || !self.boss.active) return;
-              self.boss.side = this.player.x < self.boss.x ? -1 : 1; 
+              self.boss.side = self.player.x < self.boss.x ? -1 : 1; 
               self.boss.attacking = false;
               self.bossAttackCount++;
               if (self.bossAttackText) {
@@ -813,9 +815,12 @@ export default class GameScene extends Phaser.Scene {
             boss.attackCooldown = isFirstBoss ? 8 : 2.5;
             boss.vy = 0; // Stop velocity during ram
             const self = this;
+            // Phase 2 clamp for first boss is at Y=200, so target must be <= 200
+            const stopY = isFirstBoss ? 200 : 120;
+            const targetY = isFirstBoss ? Math.min(this.player.y - 100, stopY) : this.player.y - 80;
             this.tweens.add({
               targets: boss,
-              y: this.player.y - (isFirstBoss ? 100 : 80), // Stop well short (above player)
+              y: targetY,
               duration: isFirstBoss ? 1200 : 500,
               ease: isFirstBoss ? 'Sine.easeInOut' : 'Power2',
               onComplete: () => {
