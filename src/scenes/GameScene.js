@@ -689,9 +689,11 @@ export default class GameScene extends Phaser.Scene {
       console.error('[updateBoss] PHASE LOGIC START phase=', boss.phase, 'attacking=', boss.attacking, 'attackTimer=', boss.attackTimer, 'attackCooldown=', boss.attackCooldown, 'attackCount=', this.bossAttackCount);
       // Check if player has passed the boss vertically (player is above boss)
       const playerPassedBoss = this.player.y < boss.y - 30;
+      console.error('[updateBoss] CHASE CHECK player.y=', this.player.y, 'boss.y=', boss.y, 'playerPassedBoss=', playerPassedBoss, 'bossChaseMode=', this.bossChaseMode);
       
       // Boss chase mode - if player passes boss, boss chases for a bit
       if (playerPassedBoss && !this.bossChaseMode) {
+        console.error('[updateBoss] CHASE MODE TRIGGERED!');
         this.bossChaseMode = true;
         this.bossChaseTimer = 8; // Chase for 8 seconds
         this.flashBanner('BOSS PURSUING!');
@@ -709,6 +711,7 @@ export default class GameScene extends Phaser.Scene {
         
         // Less aggressive ramming during chase
         if (boss.attackTimer > 1.5 && boss.attackCooldown <= 0) {
+          console.error('[updateBoss] CHASE ATTACK TRIGGERED attackTimer=', boss.attackTimer, 'attackCooldown=', boss.attackCooldown);
           boss.attackTimer = 0;
           boss.attackCooldown = 2.0;
           boss.vy = 0; // Stop velocity during ram
@@ -769,7 +772,7 @@ export default class GameScene extends Phaser.Scene {
         // Ram attack - MUCH LESS FREQUENT on first boss
         const attackInterval = isFirstBoss ? 3.0 : Math.max(2.5, 4 - this.level * 0.15); // TEST: 3s for first boss
         if (boss.attackTimer > attackInterval && boss.attackCooldown <= 0) {
-          console.error('[updateBoss] ATTACK TRIGGERED phase=1 attackTimer=', boss.attackTimer, 'attackInterval=', attackInterval, 'targetY=', Math.min(this.player.y - 80, 280), 'boss.y=', boss.y);
+          console.error('[updateBoss] PHASE 1 ATTACK TRIGGERED attackTimer=', boss.attackTimer, 'attackInterval=', attackInterval, 'targetY=', Math.min(this.player.y - 80, 280), 'boss.y=', boss.y);
           boss.attackTimer = 0;
           boss.attackCooldown = isFirstBoss ? 2 : 3; // TEST: shorter cooldown
           boss.attacking = true;
